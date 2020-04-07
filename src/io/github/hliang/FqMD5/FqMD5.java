@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -208,7 +209,9 @@ class FqMD5 extends JFrame {
 	// result panel
 	private JPanel createResultPanel() {
 		System.out.println(new Date() + " createResultPanel 1111");
-		JPanel resultPanel = new JPanel();
+		// using GridLayout(1,0) as layout is important, so that the table inside can
+		// auto-resize to fill the panel
+		JPanel resultPanel = new JPanel(new GridLayout(1, 0));
 		resultPanel.setPreferredSize(new Dimension(800, 500));
 		resultPanel.setBorder(BorderFactory.createLineBorder(Color.red));
 		resultPanel.setBackground(Color.lightGray);
