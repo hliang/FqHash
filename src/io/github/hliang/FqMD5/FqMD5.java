@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -33,6 +34,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 import com.cyanogenmod.updater.utils.MD5;
 
@@ -97,7 +99,7 @@ class FqMD5 extends JFrame {
 
 	public FqMD5() {
 		System.out.println(new Date() + " FqMD5()");
-		setSize(800, 600);
+		setSize(900, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //		setVisible(true);
@@ -122,7 +124,7 @@ class FqMD5 extends JFrame {
 		appPanel.add(resultPanel, BorderLayout.CENTER);
 		System.out.println(new Date() + " adding statusBar");
 		appPanel.add(statusBar, BorderLayout.SOUTH);
-		
+
 	}
 
 	private JStatusBar createStatusBar() {
@@ -196,7 +198,7 @@ class FqMD5 extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("check");
 				getFileInfo(myTableModel.getDataVector());
-				
+
 			}
 		});
 
@@ -212,8 +214,7 @@ class FqMD5 extends JFrame {
 		// using GridLayout(1,0) as layout is important, so that the table inside can
 		// auto-resize to fill the panel
 		JPanel resultPanel = new JPanel(new GridLayout(1, 0));
-		resultPanel.setPreferredSize(new Dimension(800, 500));
-		resultPanel.setBorder(BorderFactory.createLineBorder(Color.red));
+		resultPanel.setPreferredSize(new Dimension(800, 600));
 		resultPanel.setBackground(Color.lightGray);
 
 		// add a dummy row
@@ -224,23 +225,26 @@ class FqMD5 extends JFrame {
 //		Object[][] data = this.data;
 //		JTable table = new JTable(data, columnNames);
 		JTable table = new JTable(myTableModel);
+		table.setPreferredScrollableViewportSize(new Dimension(500, 100));
+		table.setFillsViewportHeight(false);
+
 		JScrollPane scrollPane = new JScrollPane(table);
-		scrollPane.setBorder(BorderFactory.createLineBorder(Color.blue));
+//		scrollPane.setBorder(BorderFactory.createLineBorder(Color.blue));
 //		scrollPane.setPreferredSize(new Dimension(700, 400));
 //		scrollPane.getViewport().setBackground(Color.ORANGE);
-		
+
 		System.out.println(new Date() + " createResultPanel 2222");
 		table.setOpaque(false);
-		table.setFillsViewportHeight(true);
-		table.setBackground(new Color(255, 255, 208));
+		table.setBackground(new Color(255, 255, 230));
 //		table.setPreferredSize(new Dimension(800, 600));
-		table.setPreferredScrollableViewportSize(new Dimension(600, 300));
+//		table.setPreferredScrollableViewportSize(new Dimension(600, 300));
 //		table.setPreferredScrollableViewportSize(table.getPreferredSize());
 //		table.setFillsViewportHeight(true);
 		// table.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		table.setGridColor(Color.lightGray);
-//		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
+		// custom renderer
 		System.out.println(new Date() + " createResultPanel 3333");
 //		DefaultTableCellRenderer r = new DefaultTableCellRenderer();
 //		r.setHorizontalAlignment(JLabel.RIGHT);
@@ -253,9 +257,21 @@ class FqMD5 extends JFrame {
 			}
 		});
 
-		
+		// set column widths and custom render (show decimal symbol separator)
+		TableColumn column = null;
+		for (int i = 0; i < columnNames.length; i++) {
+			column = table.getColumnModel().getColumn(i);
+			if (columnNames[i] == "文件名" || columnNames[i] == "MD5") {
+				column.setPreferredWidth(250); // third column is bigger
+			} else if (columnNames[i] == "文件大小" || columnNames[i] == "序列数量") {
+				table.getColumnModel().getColumn(i).setCellRenderer(new NumberTableCellRenderer());
+			} else {
+				column.setPreferredWidth(100);
+			}
+		}
+
 		System.out.println(new Date() + " createResultPanel 4444");
-		resultPanel.add(scrollPane, BorderLayout.CENTER);
+		resultPanel.add(scrollPane);
 
 		System.out.println(new Date() + " createResultPanel 5555");
 		return resultPanel;
@@ -354,6 +370,23 @@ class FqMD5 extends JFrame {
 			System.out.println(md5sum);
 		}
 		System.out.println("getFileInfo end");
+	}
+
+	public class NumberTableCellRenderer extends DefaultTableCellRenderer {
+
+		public NumberTableCellRenderer() {
+			setHorizontalAlignment(JLabel.RIGHT);
+		}
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+				int row, int column) {
+			if (value instanceof Number) {
+				value = NumberFormat.getNumberInstance().format(value);
+			}
+			return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		}
+
 	}
 
 }
