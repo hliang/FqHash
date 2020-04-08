@@ -6,14 +6,11 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Vector;
 
@@ -25,11 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingConstants;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -39,21 +32,12 @@ import javax.swing.table.TableColumn;
 import com.cyanogenmod.updater.utils.MD5;
 
 import uk.ac.babraham.FastQC.Sequence.FastQFile;
-import uk.ac.babraham.FastQC.Sequence.Sequence;
 import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 
-//public class FqMD5 {
-//	public static void main(String[] args) {
-//		AppFrame app = new AppFrame();
-//	}
-//
-//}
 
 class FqMD5 extends JFrame {
 	public static final String VERSION = "0.1";
 	private JPanel appPanel;
-	ArrayList<File> filesToProcess = new ArrayList<File>();
-	private boolean countSeq = false;
 
 	final Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, String.class, Boolean.class };
 
@@ -83,49 +67,28 @@ class FqMD5 extends JFrame {
 	}
 
 	public FqMD5() {
-		System.out.println(new Date() + " FqMD5()");
 		setSize(960, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//		setVisible(true);
 
-		System.out.println(new Date() + " creating appPanel");
 		appPanel = new JPanel();
-//		appPanel.setBackground(Color.lightGray);
 		appPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		appPanel.setLayout(new BorderLayout(2, 2));
 		setContentPane(appPanel);
 
-		System.out.println(new Date() + " creating controlPanel");
 		JPanel controlPanel = createControlPanel();
-		System.out.println(new Date() + " creating resultPanel");
 		JPanel resultPanel = createResultPanel();
-		System.out.println(new Date() + " creating statusBar");
 		JStatusBar statusBar = createStatusBar();
 
-		System.out.println(new Date() + " adding controlPanel");
 		appPanel.add(controlPanel, BorderLayout.NORTH);
-		System.out.println(new Date() + " adding resultPanel");
 		appPanel.add(resultPanel, BorderLayout.CENTER);
-		System.out.println(new Date() + " adding statusBar");
 		appPanel.add(statusBar, BorderLayout.SOUTH);
 
 	}
 
 	private JStatusBar createStatusBar() {
-//		JPanel statusBar = new JPanel();
-////		statusBar.setPreferredSize(new Dimension(parent.getWidth(), 20));
-//	    statusBar.setBorder(BorderFactory.createLineBorder(Color.red));
-//	    final JLabel status1 = new JLabel("hahaha");
-//	    final JLabel status2 = new JLabel("hoho");
-//	    status1.setHorizontalAlignment(SwingConstants.LEFT);
-//	    status2.setHorizontalAlignment(SwingConstants.LEFT);
-//	    statusBar.add(status1);
-//	    statusBar.add(status2);
-//	    return statusBar;
 		JStatusBar statusBar = new JStatusBar();
 		statusBar.setBorder(BorderFactory.createEtchedBorder());
-		// statusBar.setBackground(Color.LIGHT_GRAY);
 
 		JLabel leftLabel = new JLabel("Ready. Select files to start.");
 		statusBar.setLeftComponent(leftLabel);
@@ -145,7 +108,6 @@ class FqMD5 extends JFrame {
 	private JPanel createControlPanel() {
 		JPanel controlPanel = new JPanel();
 		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
-		controlPanel.setBackground(Color.lightGray);
 
 		JButton btnAdd = new JButton("Add Files");
 		JButton btnClear = new JButton("Clear");
@@ -216,46 +178,25 @@ class FqMD5 extends JFrame {
 		resultPanel.setPreferredSize(new Dimension(800, 600));
 		resultPanel.setBackground(Color.lightGray);
 
-		// add a dummy row
-		// Object[] newrow = { new File("/path/to/file"), new Long(8117923011L), new
-		// Integer(500000000), "md5md5", new Boolean(true) };
-		// myTableModel.addRow(newrow);
-
-//		Object[][] data = this.data;
-//		JTable table = new JTable(data, columnNames);
 		JTable table = new JTable(myTableModel);
 		table.setPreferredScrollableViewportSize(new Dimension(500, 100));
 		table.setFillsViewportHeight(false);
 
 		JScrollPane scrollPane = new JScrollPane(table);
-//		scrollPane.setBorder(BorderFactory.createLineBorder(Color.blue));
-//		scrollPane.setPreferredSize(new Dimension(700, 400));
-//		scrollPane.getViewport().setBackground(Color.ORANGE);
 
-		System.out.println(new Date() + " createResultPanel 2222");
 		table.setOpaque(false);
 		table.setBackground(new Color(255, 255, 230));
-//		table.setPreferredSize(new Dimension(800, 600));
-//		table.setPreferredScrollableViewportSize(new Dimension(600, 300));
-//		table.setPreferredScrollableViewportSize(table.getPreferredSize());
-//		table.setFillsViewportHeight(true);
-		// table.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 		table.setGridColor(Color.lightGray);
 		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
 		// custom renderer
-		System.out.println(new Date() + " createResultPanel 3333");
-//		DefaultTableCellRenderer r = new DefaultTableCellRenderer();
-//		r.setHorizontalAlignment(JLabel.RIGHT);
-//		r.setValue("xxx");
-//		table.setDefaultRenderer(File.class, r);
 		table.setDefaultRenderer(File.class, new DefaultTableCellRenderer() {
 			@Override
 			protected void setValue(Object value) {
 				super.setText((value == null && value instanceof File) ? "" : ((File) value).getName());
 			}
 		});
-//		table.setDefaultRenderer(Boolean.class, new CellHighlighterRenderer());
+		// conditional styling for user-provided-MD5 column
 		table.setDefaultRenderer(String.class, new MD5CellHighlighterRenderer());
 
 		// set column widths and custom render (show decimal symbol separator)
@@ -271,39 +212,32 @@ class FqMD5 extends JFrame {
 			}
 		}
 
-		System.out.println(new Date() + " createResultPanel 4444");
 		resultPanel.add(scrollPane);
 
-		System.out.println(new Date() + " createResultPanel 5555");
 		return resultPanel;
 	}
 
 	// select files to add into the table
 	public void showFileOpen(Component parent) {
 		// file chooser
-		JFileChooser fileChooser = new JFileChooser(
-				System.getProperty("user.home") + System.getProperty("file.separator") + "prj");
+		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileChooser.setMultiSelectionEnabled(true);
-		// TODO custom file filter for sequence files
+		// TODO custom file filter for all types of sequence files
 		FileFilter ffilterGZ = new FileNameExtensionFilter("gzip file", "gz");
 		FileFilter ffilterSH = new FileNameExtensionFilter("sh file", "sh");
 		FileFilter ffilterBAM = new FileNameExtensionFilter("bam", "bam");
 		fileChooser.addChoosableFileFilter(ffilterGZ);
 		fileChooser.addChoosableFileFilter(ffilterSH);
 		fileChooser.addChoosableFileFilter(ffilterBAM);
-//		fileChooser.setFileFilter(ffilterGZ);  // set default file filter
 		fileChooser.setAcceptAllFileFilterUsed(true); // false: hide the "[All files]" option
 		// 接受结果
 		int result = fileChooser.showOpenDialog(parent);
 		// 是否选择了文件
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File[] files = fileChooser.getSelectedFiles();
-//			filesToProcess = files;
-//			filesToProcess.addAll(Arrays.asList(files));
 			for (File file : files) {
 				System.out.println(file);
-//				filesToProcess.add(file);
 				Object[] newrow = { file, file.length(), null, null, null, null};
 				myTableModel.addRow(newrow);
 				System.out.println(file.getName());
@@ -313,7 +247,6 @@ class FqMD5 extends JFrame {
 	}
 
 	public void getFileInfo(Vector tableDataVector) {
-		System.out.println("getFileInfo starting");
 		int idx_md5 = myTableModel.findColumn("MD5");
 		int idx_readcount = myTableModel.findColumn("序列数量");
 		for (int i = 0; i < tableDataVector.size(); i++) {
@@ -337,35 +270,8 @@ class FqMD5 extends JFrame {
 				// 计算MD5值
 				String md5sum = MD5.calculateMD5(file);
 				myTableModel.setValueAt(md5sum, i, idx_md5);
-			} else {
-				System.out.println("skip file " + file);
 			}
 		}
-		System.out.println("getFileInfo end");
-	}
-
-	public static void getFileInfo(File[] files) {
-		System.out.println("getFileInfo starting");
-		for (int i = 0; i < files.length; i++) {
-			System.out.println(files[i].getPath());
-			System.out.println(files[i].length());
-			// 计算MD5值
-			String md5sum = MD5.calculateMD5(files[i]);
-			System.out.println(md5sum);
-		}
-		System.out.println("getFileInfo end");
-	}
-
-	public static void getFileInfo(ArrayList<File> files) {
-		System.out.println("getFileInfo starting");
-		for (File file : files) {
-			System.out.println(file.getPath());
-			System.out.println(file.length());
-			// 计算MD5值
-			String md5sum = MD5.calculateMD5(file);
-			System.out.println(md5sum);
-		}
-		System.out.println("getFileInfo end");
 	}
 
 
@@ -380,7 +286,6 @@ class FqMD5 extends JFrame {
 			if (myTableModel.getValueAt(i, idxMD5Calculated) != null && myTableModel.getValueAt(i, idxMD5UserProvided) != null) {
 				String MD5Calculated = (String) myTableModel.getValueAt(i, idxMD5Calculated);
 				String MD5UserProvided = (String) myTableModel.getValueAt(i, idxMD5UserProvided);
-	//			Boolean md5Matched = myTableModel.getValueAt(i, idxMD5Calculated).equals(myTableModel.getValueAt(i, idxMD5UserProvided));
 				myTableModel.setValueAt(MD5Calculated.contentEquals(MD5UserProvided), i, idxMD5Matched);
 			}
 		}
@@ -405,26 +310,6 @@ class FqMD5 extends JFrame {
 
 	}
 
-	public class CellHighlighterRenderer extends DefaultTableCellRenderer {
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object obj,
-				boolean isSelected, boolean hasFocus, int row, int column) {
-
-			Object md5a = table.getModel().getValueAt(row, 3);
-			Object md5b = table.getModel().getValueAt(row, 4);
-//			System.out.println(md5a + " /// " + md5b);
-			Component cellComp = super.getTableCellRendererComponent(table, obj, isSelected, hasFocus, row, column);
-			System.out.println(obj);
-			if (obj != null && obj.equals(Boolean.TRUE)) {
-				cellComp.setBackground(Color.green);
-			} else if (obj != null && obj.equals(Boolean.FALSE)) {
-				cellComp.setBackground(Color.pink);
-			}
-
-			return cellComp;
-		}
-	}
-
 	public class MD5CellHighlighterRenderer extends DefaultTableCellRenderer {
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object obj,
@@ -436,11 +321,9 @@ class FqMD5 extends JFrame {
 			Component cellComp = super.getTableCellRendererComponent(table, obj, isSelected, hasFocus, row, column);
 			if (!isSelected) {
 			if (column == 4 && md5a != null && md5b != null && md5a.equals(md5b)) {
-				System.out.println(md5a + " /// " + md5b);
 				// cellComp.setForeground(Color.black);
 				cellComp.setBackground(new Color(191, 238, 144));
 			} else if (column == 4 && md5a != null && md5b != null && ! md5a.equals(md5b)) {
-				System.out.println(md5a + " /// " + md5b);
 				// cellComp.setForeground(Color.black);
 				cellComp.setBackground(Color.pink);
 			} else {
