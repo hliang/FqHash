@@ -65,9 +65,7 @@ class FqMD5 extends JFrame {
 
 
 	public static void main(String[] args) {
-		System.out.println(new Date() + " main");
 		FqMD5 appFrame = new FqMD5();
-		System.out.println(new Date() + " appFrame creation done");
 		appFrame.setVisible(true);
 		appFrame.setResizable(true);
 	}
@@ -130,9 +128,7 @@ class FqMD5 extends JFrame {
 		btnAdd.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("INFO add");
 				showFileOpen(appPanel);
-				System.out.println("INFO add 222 datavector" + myTableModel.getDataVector());
 				if (myTableModel.getDataVector() != null) {
 					btnAnalyze.setEnabled(true);
 					btnVerify.setEnabled(true);
@@ -140,7 +136,6 @@ class FqMD5 extends JFrame {
 					btnAnalyze.setEnabled(false);
 					btnVerify.setEnabled(false);
 				}
-				System.out.println("INFO add 333");
 			}
 		});
 
@@ -148,7 +143,6 @@ class FqMD5 extends JFrame {
 		btnClear.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("INFO clear");
 				myTableModel.setRowCount(0);
 			}
 		});
@@ -157,7 +151,6 @@ class FqMD5 extends JFrame {
 		btnAnalyze.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("check");
 				getFileInfo(myTableModel.getDataVector());
 
 			}
@@ -180,7 +173,6 @@ class FqMD5 extends JFrame {
 
 	// result panel
 	private JPanel createResultPanel() {
-		System.out.println(new Date() + " createResultPanel 1111");
 		// using GridLayout(1,0) as layout is important, so that the table inside can
 		// auto-resize to fill the panel
 		JPanel resultPanel = new JPanel(new GridLayout(1, 0));
@@ -251,11 +243,8 @@ class FqMD5 extends JFrame {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File[] files = fileChooser.getSelectedFiles();
 			for (File file : files) {
-				System.out.println(file);
 				Object[] newrow = { file, file.length(), null, null, null, null};
 				myTableModel.addRow(newrow);
-				System.out.println(file.getName());
-				System.out.println("data vector" + myTableModel.getDataVector());
 			}
 		}
 	}
@@ -290,20 +279,16 @@ class FqMD5 extends JFrame {
 
 
 	protected void verifyMD5(Vector tableDataVector) {
-		System.out.println("verifyMD5 starting");
 		int idxMD5Calculated = myTableModel.findColumn("MD5");
 		int idxMD5UserProvided = myTableModel.findColumn("Verify Checksum");
 		int idxMD5Matched = myTableModel.findColumn("Match");
 		for (int i = 0; i < tableDataVector.size(); i++) {
-			System.out.println(myTableModel.getValueAt(i, idxMD5Calculated));
-			System.out.println(myTableModel.getValueAt(i, idxMD5UserProvided));
 			if (myTableModel.getValueAt(i, idxMD5Calculated) != null && myTableModel.getValueAt(i, idxMD5UserProvided) != null) {
 				String MD5Calculated = (String) myTableModel.getValueAt(i, idxMD5Calculated);
 				String MD5UserProvided = (String) myTableModel.getValueAt(i, idxMD5UserProvided);
 				myTableModel.setValueAt(MD5Calculated.contentEquals(MD5UserProvided), i, idxMD5Matched);
 			}
 		}
-		System.out.println("verifyMD5 done");
 
 	}
 
@@ -350,7 +335,7 @@ class FqMD5 extends JFrame {
 		}
 	}
 
-	// implementation code to set a tool tip text to each column of JTableHeader
+	// implementation code to set a tooltip text to each column of JTableHeader
 	// adopted from https://www.tutorialspoint.com/how-to-set-a-tooltip-to-each-column-of-a-jtableheader-in-java
 	class ToolTipHeader extends JTableHeader {
 		String[] toolTips;
