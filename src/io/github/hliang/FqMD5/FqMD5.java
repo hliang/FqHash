@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -27,7 +28,9 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import com.cyanogenmod.updater.utils.MD5;
 
@@ -41,11 +44,13 @@ class FqMD5 extends JFrame {
 
 	final Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, String.class, Boolean.class };
 
-	private String[] columnNames = { "文件名", "文件大小", "序列数量", "MD5", "校验", "匹配" };
+	private String[] columnNames = { "File Name", "File Size", "Total Seq", "MD5", "Verify Checksum", "Match" };
+	protected String[] columnToolTips = { null, null, null, "Current file MD5 checksum value",
+			"Enter original md5 value to verify", "If checked, MD5 checksums match"};
 	DefaultTableModel myTableModel = new DefaultTableModel(columnNames, 0) {
 		@Override
 		public boolean isCellEditable(int row, int column) {
-			if (columnNames[column] == "校验") {
+			if (columnNames[column] == "Verify Checksum") {
 				return true;
 			} else {
 				return false;
@@ -57,6 +62,7 @@ class FqMD5 extends JFrame {
 			return columnClass[columnIndex];
 		}
 	};
+
 
 	public static void main(String[] args) {
 		System.out.println(new Date() + " main");
@@ -112,8 +118,11 @@ class FqMD5 extends JFrame {
 		JButton btnAdd = new JButton("Add Files");
 		JButton btnClear = new JButton("Clear");
 		JButton btnAnalyze = new JButton("Analyze");
-		btnAnalyze.setEnabled(false);
 		JButton btnVerify = new JButton("Verify");
+		// set tool tips
+		btnAnalyze.setToolTipText("Count reads and calculate MD5 hash");
+		btnVerify.setToolTipText("Verify MD5 Checksum");
+		btnAnalyze.setEnabled(false);
 		btnVerify.setEnabled(false);
 
 
@@ -182,6 +191,11 @@ class FqMD5 extends JFrame {
 		table.setPreferredScrollableViewportSize(new Dimension(500, 100));
 		table.setFillsViewportHeight(false);
 
+		ToolTipHeader tooltipHeader = new ToolTipHeader(table.getColumnModel());
+		tooltipHeader.setToolTipStrings(columnToolTips);
+		table.setTableHeader(tooltipHeader);
+
+
 		JScrollPane scrollPane = new JScrollPane(table);
 
 		table.setOpaque(false);
@@ -203,9 +217,9 @@ class FqMD5 extends JFrame {
 		TableColumn column = null;
 		for (int i = 0; i < columnNames.length; i++) {
 			column = table.getColumnModel().getColumn(i);
-			if (columnNames[i] == "文件名" || columnNames[i] == "MD5" || columnNames[i] == "校验") {
+			if (columnNames[i] == "File Name" || columnNames[i] == "MD5" || columnNames[i] == "Verify Checksum") {
 				column.setPreferredWidth(250); // third column is bigger
-			} else if (columnNames[i] == "文件大小" || columnNames[i] == "序列数量") {
+			} else if (columnNames[i] == "File Size" || columnNames[i] == "Total Seq") {
 				table.getColumnModel().getColumn(i).setCellRenderer(new NumberTableCellRenderer());
 			} else {
 				column.setPreferredWidth(100);
@@ -248,7 +262,7 @@ class FqMD5 extends JFrame {
 
 	public void getFileInfo(Vector tableDataVector) {
 		int idx_md5 = myTableModel.findColumn("MD5");
-		int idx_readcount = myTableModel.findColumn("序列数量");
+		int idx_readcount = myTableModel.findColumn("Total Seq");
 		for (int i = 0; i < tableDataVector.size(); i++) {
 			File file = (File) ((Vector) tableDataVector.get(i)).get(0);
 			if (myTableModel.getValueAt(i, idx_md5) == null || myTableModel.getValueAt(i, idx_readcount) == null
@@ -278,8 +292,8 @@ class FqMD5 extends JFrame {
 	protected void verifyMD5(Vector tableDataVector) {
 		System.out.println("verifyMD5 starting");
 		int idxMD5Calculated = myTableModel.findColumn("MD5");
-		int idxMD5UserProvided = myTableModel.findColumn("校验");
-		int idxMD5Matched = myTableModel.findColumn("匹配");
+		int idxMD5UserProvided = myTableModel.findColumn("Verify Checksum");
+		int idxMD5Matched = myTableModel.findColumn("Match");
 		for (int i = 0; i < tableDataVector.size(); i++) {
 			System.out.println(myTableModel.getValueAt(i, idxMD5Calculated));
 			System.out.println(myTableModel.getValueAt(i, idxMD5UserProvided));
@@ -333,6 +347,37 @@ class FqMD5 extends JFrame {
 			}
 
 			return cellComp;
+		}
+	}
+
+	// implementation code to set a tool tip text to each column of JTableHeader
+	// adopted from https://www.tutorialspoint.com/how-to-set-a-tooltip-to-each-column-of-a-jtableheader-in-java
+	class ToolTipHeader extends JTableHeader {
+		String[] toolTips;
+
+		public ToolTipHeader(TableColumnModel model) {
+			super(model);
+		}
+
+		public String getToolTipText(MouseEvent e) {
+			int col = columnAtPoint(e.getPoint());
+			int modelCol = getTable().convertColumnIndexToModel(col);
+			String retStr;
+			try {
+				retStr = toolTips[modelCol];
+			} catch (NullPointerException ex) {
+				retStr = "";
+			} catch (ArrayIndexOutOfBoundsException ex) {
+				retStr = "";
+			}
+			if (retStr == null || retStr.length() < 1) {
+				retStr = super.getToolTipText(e);
+			}
+			return retStr;
+		}
+
+		public void setToolTipStrings(String[] toolTips) {
+			this.toolTips = toolTips;
 		}
 	}
 
