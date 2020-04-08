@@ -71,6 +71,7 @@ class FqMD5 extends JFrame {
 	}
 
 	public FqMD5() {
+		setTitle("FqMD5");
 		setSize(960, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -144,6 +145,8 @@ class FqMD5 extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				myTableModel.setRowCount(0);
+				btnAnalyze.setEnabled(false);
+				btnVerify.setEnabled(false);
 			}
 		});
 
@@ -187,6 +190,8 @@ class FqMD5 extends JFrame {
 		tooltipHeader.setToolTipStrings(columnToolTips);
 		table.setTableHeader(tooltipHeader);
 
+		table.setCellSelectionEnabled(true);
+
 
 		JScrollPane scrollPane = new JScrollPane(table);
 
@@ -194,6 +199,7 @@ class FqMD5 extends JFrame {
 		table.setBackground(new Color(255, 255, 230));
 		table.setGridColor(Color.lightGray);
 		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		table.getTableHeader().setFont(new Font(null, Font.PLAIN, 14));
 
 		// custom renderer
 		table.setDefaultRenderer(File.class, new DefaultTableCellRenderer() {
@@ -321,10 +327,10 @@ class FqMD5 extends JFrame {
 			if (!isSelected) {
 			if (column == 4 && md5a != null && md5b != null && md5a.equals(md5b)) {
 				// cellComp.setForeground(Color.black);
-				cellComp.setBackground(new Color(191, 238, 144));
+				cellComp.setBackground(new Color(198, 240, 205));
 			} else if (column == 4 && md5a != null && md5b != null && ! md5a.equals(md5b)) {
 				// cellComp.setForeground(Color.black);
-				cellComp.setBackground(Color.pink);
+				cellComp.setBackground(new Color(255, 200, 207));
 			} else {
 				// cellComp.setForeground(Color.black);
 				cellComp.setBackground(null);
