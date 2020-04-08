@@ -55,32 +55,17 @@ class FqMD5 extends JFrame {
 	ArrayList<File> filesToProcess = new ArrayList<File>();
 	private boolean countSeq = false;
 
-	final Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, Boolean.class };
-	/*
-	 * private Object[][] data; private Object[][] data = { { new
-	 * File("/tmp/abc_R1.fq.gz"), "adkgjaldjfadf", new Long(1970804885L), new
-	 * Integer(200000000), new Boolean(false) }, { new
-	 * File("/tmp/123/abc_R1.fq.gz"), "15ae134setser", new Long(2986270852L), new
-	 * Integer(3000000), new Boolean(true) }, { new File("abc_R1.fq.gz"),
-	 * "a19aygjkaeoq3", new Long(476017200L), new Integer(400000000), new
-	 * Boolean(false) }, { new File("abc_R1.fq.gz"), "al83hjas9gakj", new
-	 * Long(8117923011L), new Integer(500000000), new Boolean(true) }, { new
-	 * File("abc_R1.fq.gz"), "alXXXXas9gakj", new Long(8117923011L), new
-	 * Integer(500000000), new Boolean(true) }, { new File("abc_R1.fq.gz"),
-	 * "adllllldjfadf", new Long(1970804885L), new Integer(200000000), new
-	 * Boolean(false) }, { new File("abc_R1.fq.gz"), "15ae134setser", new
-	 * Long(2986270852L), new Integer(300000000), new Boolean(true) }, { new
-	 * File("abc_R1.fq.gz"), "a19aygjkaeoq3", new Long(4766017200L), new
-	 * Integer(400000000), new Boolean(false) }, { new File("/dir/xyz/"),
-	 * "al83hjas9gakj", new Long(8117923011L), new Integer(500000000), new
-	 * Boolean(true) } };
-	 */
+	final Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, String.class, Boolean.class };
 
-	private String[] columnNames = { "文件名", "文件大小", "序列数量", "MD5", "校验" };
+	private String[] columnNames = { "文件名", "文件大小", "序列数量", "MD5", "校验", "匹配" };
 	DefaultTableModel myTableModel = new DefaultTableModel(columnNames, 0) {
 		@Override
 		public boolean isCellEditable(int row, int column) {
-			return false;
+			if (columnNames[column] == "校验") {
+				return true;
+			} else {
+				return false;
+			}
 		}
 
 		@Override
@@ -99,7 +84,7 @@ class FqMD5 extends JFrame {
 
 	public FqMD5() {
 		System.out.println(new Date() + " FqMD5()");
-		setSize(900, 600);
+		setSize(960, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //		setVisible(true);
@@ -164,8 +149,11 @@ class FqMD5 extends JFrame {
 
 		JButton btnAdd = new JButton("Add Files");
 		JButton btnClear = new JButton("Clear");
-		JButton btnCheck = new JButton("Check MD5");
-		btnCheck.setEnabled(false);
+		JButton btnAnalyze = new JButton("Analyze");
+		btnAnalyze.setEnabled(false);
+		JButton btnVerify = new JButton("Verify");
+		btnVerify.setEnabled(false);
+
 
 		// 添加文件
 		btnAdd.addActionListener(new ActionListener() {
@@ -175,9 +163,11 @@ class FqMD5 extends JFrame {
 				showFileOpen(appPanel);
 				System.out.println("INFO add 222 datavector" + myTableModel.getDataVector());
 				if (myTableModel.getDataVector() != null) {
-					btnCheck.setEnabled(true);
+					btnAnalyze.setEnabled(true);
+					btnVerify.setEnabled(true);
 				} else {
-					btnCheck.setEnabled(false);
+					btnAnalyze.setEnabled(false);
+					btnVerify.setEnabled(false);
 				}
 				System.out.println("INFO add 333");
 			}
@@ -193,7 +183,7 @@ class FqMD5 extends JFrame {
 		});
 
 		// 处理文件
-		btnCheck.addActionListener(new ActionListener() {
+		btnAnalyze.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("check");
@@ -202,9 +192,18 @@ class FqMD5 extends JFrame {
 			}
 		});
 
+		// 检查MD5是否匹配
+		btnVerify.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				verifyMD5(myTableModel.getDataVector());
+			}
+		});
+
 		controlPanel.add(btnAdd);
 		controlPanel.add(btnClear);
-		controlPanel.add(btnCheck);
+		controlPanel.add(btnAnalyze);
+		controlPanel.add(btnVerify);
 		return controlPanel;
 	}
 
@@ -256,12 +255,14 @@ class FqMD5 extends JFrame {
 				super.setText((value == null && value instanceof File) ? "" : ((File) value).getName());
 			}
 		});
+//		table.setDefaultRenderer(Boolean.class, new CellHighlighterRenderer());
+		table.setDefaultRenderer(String.class, new MD5CellHighlighterRenderer());
 
 		// set column widths and custom render (show decimal symbol separator)
 		TableColumn column = null;
 		for (int i = 0; i < columnNames.length; i++) {
 			column = table.getColumnModel().getColumn(i);
-			if (columnNames[i] == "文件名" || columnNames[i] == "MD5") {
+			if (columnNames[i] == "文件名" || columnNames[i] == "MD5" || columnNames[i] == "校验") {
 				column.setPreferredWidth(250); // third column is bigger
 			} else if (columnNames[i] == "文件大小" || columnNames[i] == "序列数量") {
 				table.getColumnModel().getColumn(i).setCellRenderer(new NumberTableCellRenderer());
@@ -303,7 +304,7 @@ class FqMD5 extends JFrame {
 			for (File file : files) {
 				System.out.println(file);
 //				filesToProcess.add(file);
-				Object[] newrow = { file, file.length(), null, null, null };
+				Object[] newrow = { file, file.length(), null, null, null, null};
 				myTableModel.addRow(newrow);
 				System.out.println(file.getName());
 				System.out.println("data vector" + myTableModel.getDataVector());
@@ -317,33 +318,28 @@ class FqMD5 extends JFrame {
 		int idx_readcount = myTableModel.findColumn("序列数量");
 		for (int i = 0; i < tableDataVector.size(); i++) {
 			File file = (File) ((Vector) tableDataVector.get(i)).get(0);
-			System.out.println(file.getPath());
-			System.out.println(file.length());
-			// 计算Read数
-
-			FastQFile seqFile;
-			try {
-				seqFile = new FastQFile(file);
-				int seqCount = 0;
-				while (seqFile.hasNext()) {
-					++seqCount;
-					Sequence seq;
-					seq = seqFile.next();
+			if (myTableModel.getValueAt(i, idx_md5) == null || myTableModel.getValueAt(i, idx_readcount) == null
+					|| myTableModel.getValueAt(i, idx_readcount) == "ERROR") {
+				// 计算Read数
+				FastQFile seqFile;
+				try {
+					seqFile = new FastQFile(file);
+					int seqCount = 0;
+					while (seqFile.hasNext()) {
+						++seqCount;
+						seqFile.next();
+					}
+					myTableModel.setValueAt(seqCount, i, idx_readcount);
+				} catch (SequenceFormatException | IOException e) {
+					myTableModel.setValueAt("ERROR", i, idx_readcount);
 				}
-				System.out.println("total count = " + seqCount);
-				myTableModel.setValueAt(seqCount, i, idx_readcount);
-			} catch (SequenceFormatException e) {
-				e.printStackTrace();
-				myTableModel.setValueAt("ERROR", i, idx_readcount);
-			} catch (IOException e) {
-				e.printStackTrace();
-				myTableModel.setValueAt("ERROR", i, idx_readcount);
-			}
 
-			// 计算MD5值
-			String md5sum = MD5.calculateMD5(file);
-			myTableModel.setValueAt(md5sum, i, idx_md5);
-			System.out.println(md5sum);
+				// 计算MD5值
+				String md5sum = MD5.calculateMD5(file);
+				myTableModel.setValueAt(md5sum, i, idx_md5);
+			} else {
+				System.out.println("skip file " + file);
+			}
 		}
 		System.out.println("getFileInfo end");
 	}
@@ -372,6 +368,26 @@ class FqMD5 extends JFrame {
 		System.out.println("getFileInfo end");
 	}
 
+
+	protected void verifyMD5(Vector tableDataVector) {
+		System.out.println("verifyMD5 starting");
+		int idxMD5Calculated = myTableModel.findColumn("MD5");
+		int idxMD5UserProvided = myTableModel.findColumn("校验");
+		int idxMD5Matched = myTableModel.findColumn("匹配");
+		for (int i = 0; i < tableDataVector.size(); i++) {
+			System.out.println(myTableModel.getValueAt(i, idxMD5Calculated));
+			System.out.println(myTableModel.getValueAt(i, idxMD5UserProvided));
+			if (myTableModel.getValueAt(i, idxMD5Calculated) != null && myTableModel.getValueAt(i, idxMD5UserProvided) != null) {
+				String MD5Calculated = (String) myTableModel.getValueAt(i, idxMD5Calculated);
+				String MD5UserProvided = (String) myTableModel.getValueAt(i, idxMD5UserProvided);
+	//			Boolean md5Matched = myTableModel.getValueAt(i, idxMD5Calculated).equals(myTableModel.getValueAt(i, idxMD5UserProvided));
+				myTableModel.setValueAt(MD5Calculated.contentEquals(MD5UserProvided), i, idxMD5Matched);
+			}
+		}
+		System.out.println("verifyMD5 done");
+
+	}
+
 	public class NumberTableCellRenderer extends DefaultTableCellRenderer {
 
 		public NumberTableCellRenderer() {
@@ -388,5 +404,54 @@ class FqMD5 extends JFrame {
 		}
 
 	}
+
+	public class CellHighlighterRenderer extends DefaultTableCellRenderer {
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object obj,
+				boolean isSelected, boolean hasFocus, int row, int column) {
+
+			Object md5a = table.getModel().getValueAt(row, 3);
+			Object md5b = table.getModel().getValueAt(row, 4);
+//			System.out.println(md5a + " /// " + md5b);
+			Component cellComp = super.getTableCellRendererComponent(table, obj, isSelected, hasFocus, row, column);
+			System.out.println(obj);
+			if (obj != null && obj.equals(Boolean.TRUE)) {
+				cellComp.setBackground(Color.green);
+			} else if (obj != null && obj.equals(Boolean.FALSE)) {
+				cellComp.setBackground(Color.pink);
+			}
+
+			return cellComp;
+		}
+	}
+
+	public class MD5CellHighlighterRenderer extends DefaultTableCellRenderer {
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object obj,
+				boolean isSelected, boolean hasFocus, int row, int column) {
+
+			Object md5a = table.getModel().getValueAt(row, 3);
+			Object md5b = table.getModel().getValueAt(row, 4);
+
+			Component cellComp = super.getTableCellRendererComponent(table, obj, isSelected, hasFocus, row, column);
+			if (!isSelected) {
+			if (column == 4 && md5a != null && md5b != null && md5a.equals(md5b)) {
+				System.out.println(md5a + " /// " + md5b);
+				// cellComp.setForeground(Color.black);
+				cellComp.setBackground(new Color(191, 238, 144));
+			} else if (column == 4 && md5a != null && md5b != null && ! md5a.equals(md5b)) {
+				System.out.println(md5a + " /// " + md5b);
+				// cellComp.setForeground(Color.black);
+				cellComp.setBackground(Color.pink);
+			} else {
+				// cellComp.setForeground(Color.black);
+				cellComp.setBackground(null);
+			}
+			}
+
+			return cellComp;
+		}
+	}
+
 
 }
