@@ -1,4 +1,4 @@
-package io.github.hliang.FqMD5;
+package io.github.hliang.FqHash;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -38,7 +38,7 @@ import uk.ac.babraham.FastQC.Sequence.FastQFile;
 import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 
 
-class FqMD5 extends JFrame {
+class FqHash extends JFrame {
 	public static final String VERSION = "0.1";
 	private JPanel appPanel;
 
@@ -65,13 +65,13 @@ class FqMD5 extends JFrame {
 
 
 	public static void main(String[] args) {
-		FqMD5 appFrame = new FqMD5();
+		FqHash appFrame = new FqHash();
 		appFrame.setVisible(true);
 		appFrame.setResizable(true);
 	}
 
-	public FqMD5() {
-		setTitle("FqMD5");
+	public FqHash() {
+		setTitle("FqHash");
 		setSize(960, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -102,7 +102,7 @@ class FqMD5 extends JFrame {
 		dateLabel.setHorizontalAlignment(JLabel.CENTER);
 		statusBar.addRightComponent(dateLabel);
 
-		final JLabel timeLabel = new JLabel("FqMD5 v" + VERSION);
+		final JLabel timeLabel = new JLabel("FqHash v" + VERSION);
 		timeLabel.setHorizontalAlignment(JLabel.CENTER);
 		statusBar.addRightComponent(timeLabel);
 
