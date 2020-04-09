@@ -4,25 +4,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.util.Date;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -37,99 +26,65 @@ import com.cyanogenmod.updater.utils.MD5;
 import uk.ac.babraham.FastQC.Sequence.FastQFile;
 import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.Date;
+import java.util.Vector;
+import java.awt.event.ActionEvent;
+import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 
-class FqHash extends JFrame {
-	public static final String VERSION = "0.1";
-	private JPanel appPanel;
+public class FqHashApp extends JFrame {
 
-	final Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, String.class, Boolean.class };
+	private JPanel contentPane;
+	private JButton btnAdd;
+	private JButton btnClear;
+	private JButton btnAnalyze;
+	private JButton btnVerify;
+	private JCheckBox cbCountSeq;
+	private JScrollPane scrollPane;
+	private JTable table;
+	private DefaultTableModel myTableModel;
 
-	private String[] columnNames = { "File Name", "File Size", "Total Seq", "MD5", "Verify Checksum", "Match" };
-	protected String[] columnToolTips = { null, null, null, "Current file MD5 checksum value",
-			"Enter original md5 value to verify", "If checked, MD5 checksums match"};
-	DefaultTableModel myTableModel = new DefaultTableModel(columnNames, 0) {
-		@Override
-		public boolean isCellEditable(int row, int column) {
-			if (columnNames[column] == "Verify Checksum") {
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-		@Override
-		public Class getColumnClass(int columnIndex) {
-			return columnClass[columnIndex];
-		}
-	};
-
-
+	/**
+	 * Launch the application.
+	 */
 	public static void main(String[] args) {
-		FqHash appFrame = new FqHash();
-		appFrame.setVisible(true);
-		appFrame.setResizable(true);
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					FqHashApp frame = new FqHashApp();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
-	public FqHash() {
-		setTitle("FqHash");
-		setSize(960, 600);
-		setLocationRelativeTo(null);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		appPanel = new JPanel();
-		appPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		appPanel.setLayout(new BorderLayout(2, 2));
-		setContentPane(appPanel);
-
-		JPanel controlPanel = createControlPanel();
-		JPanel resultPanel = createResultPanel();
-		JStatusBar statusBar = createStatusBar();
-
-		appPanel.add(controlPanel, BorderLayout.NORTH);
-		appPanel.add(resultPanel, BorderLayout.CENTER);
-		appPanel.add(statusBar, BorderLayout.SOUTH);
-
+	/**
+	 * Create the frame.
+	 */
+	public FqHashApp() {
+		initComponens();
+		createEvents();
 	}
 
-	private JStatusBar createStatusBar() {
-		JStatusBar statusBar = new JStatusBar();
-		statusBar.setBorder(BorderFactory.createEtchedBorder());
 
-		JLabel leftLabel = new JLabel("Ready. Select files to start.");
-		statusBar.setLeftComponent(leftLabel);
-
-		final JLabel dateLabel = new JLabel("Idle");
-		dateLabel.setHorizontalAlignment(JLabel.CENTER);
-		statusBar.addRightComponent(dateLabel);
-
-		final JLabel timeLabel = new JLabel("FqHash v" + VERSION);
-		timeLabel.setHorizontalAlignment(JLabel.CENTER);
-		statusBar.addRightComponent(timeLabel);
-
-		return statusBar;
-	}
-
-	// control panel
-	private JPanel createControlPanel() {
-		JPanel controlPanel = new JPanel();
-		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
-
-		JButton btnAdd = new JButton("Add Files");
-		JButton btnClear = new JButton("Clear");
-		JButton btnAnalyze = new JButton("Analyze");
-		JButton btnVerify = new JButton("Verify");
-		// set tool tips
-		btnAnalyze.setToolTipText("Count reads and calculate MD5 hash");
-		btnVerify.setToolTipText("Verify MD5 Checksum");
-		btnAnalyze.setEnabled(false);
-		btnVerify.setEnabled(false);
-
-
-		// 添加文件
+	//////////////////////////////////////////////////
+	// creating events
+	//////////////////////////////////////////////////
+	private void createEvents() {
+		// show "Open File" dialog
 		btnAdd.addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent e) {
-				showFileOpen(appPanel);
+				showFileOpen(contentPane);
 				if (myTableModel.getDataVector() != null) {
 					btnAnalyze.setEnabled(true);
 					btnVerify.setEnabled(true);
@@ -140,9 +95,8 @@ class FqHash extends JFrame {
 			}
 		});
 
-		// 清除
+		// clear all data in table
 		btnClear.addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				myTableModel.setRowCount(0);
 				btnAnalyze.setEnabled(false);
@@ -150,29 +104,76 @@ class FqHash extends JFrame {
 			}
 		});
 
-		// 处理文件
+		// analyze the files
 		btnAnalyze.addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				getFileInfo(myTableModel.getDataVector());
-
 			}
 		});
 
-		// 检查MD5是否匹配
+		// verify the checksums match
 		btnVerify.addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				verifyMD5(myTableModel.getDataVector());
 			}
 		});
+	}
 
+
+	//////////////////////////////////////////////////
+	// initializing components
+	//////////////////////////////////////////////////
+	private void initComponens() {
+		setTitle("FqHash");
+		setSize(1000, 600);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		contentPane.setLayout(new BorderLayout(2, 2));
+		setContentPane(contentPane);
+
+		JPanel controlPanel = createControlPanel();
+		JPanel resultPanel = createResultPanel();
+
+		contentPane.add(controlPanel, BorderLayout.NORTH);
+		contentPane.add(resultPanel, BorderLayout.CENTER);
+
+	}
+
+
+	// control panel
+	private JPanel createControlPanel() {
+		JPanel controlPanel = new JPanel();
+		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+
+		btnAdd = new JButton("Add Files");
+		btnClear = new JButton("Clear");
+		btnAnalyze = new JButton("Analyze");
+		btnVerify = new JButton("Verify");
+
+		cbCountSeq = new JCheckBox("Count Sequences");
+		cbCountSeq.setSelected(true);
+
+		// set tool tips
+		btnAnalyze.setToolTipText("Count sequences and calculate MD5 hash");
+		btnVerify.setToolTipText("Verify MD5 Checksum");
+
+		// disable buttons when they are created the first time
+		btnAnalyze.setEnabled(false);
+		btnVerify.setEnabled(false);
+
+		// add button to control panel
 		controlPanel.add(btnAdd);
 		controlPanel.add(btnClear);
+		controlPanel.add(cbCountSeq);
 		controlPanel.add(btnAnalyze);
 		controlPanel.add(btnVerify);
+
 		return controlPanel;
 	}
+
 
 	// result panel
 	private JPanel createResultPanel() {
@@ -180,34 +181,53 @@ class FqHash extends JFrame {
 		// auto-resize to fill the panel
 		JPanel resultPanel = new JPanel(new GridLayout(1, 0));
 		resultPanel.setPreferredSize(new Dimension(800, 600));
-		resultPanel.setBackground(Color.lightGray);
 
-		JTable table = new JTable(myTableModel);
-		table.setPreferredScrollableViewportSize(new Dimension(500, 100));
-		table.setFillsViewportHeight(false);
+		Class[] columnClass = new Class[] { File.class, Long.class, Integer.class, String.class, String.class,
+				Boolean.class };
+		String[] columnNames = { "File Name", "File Size", "Total Seq", "MD5", "Verify Checksum", "Match" };
+		String[] columnToolTips = { null, null, null, "Current file MD5 checksum value",
+				"Enter original md5 value to verify", "If checked, MD5 checksums match" };
+		myTableModel = new DefaultTableModel(columnNames, 0) {
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				if (columnNames[column] == "Verify Checksum") { // editable column
+					return true;
+				} else {
+					return false;
+				}
+			}
 
-		ToolTipHeader tooltipHeader = new ToolTipHeader(table.getColumnModel());
-		tooltipHeader.setToolTipStrings(columnToolTips);
-		table.setTableHeader(tooltipHeader);
+			@Override
+			public Class getColumnClass(int columnIndex) {
+				return columnClass[columnIndex];
+			}
+		};
 
+		table = new JTable(myTableModel);
+
+		table.setFillsViewportHeight(true);
 		table.setCellSelectionEnabled(true);
-
-
-		JScrollPane scrollPane = new JScrollPane(table);
-
 		table.setOpaque(false);
 		table.setBackground(new Color(255, 255, 230));
 		table.setGridColor(Color.lightGray);
 		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+		// tool tips when mouse hovers over table header
+		ToolTipHeader tooltipHeader = new ToolTipHeader(table.getColumnModel());
+		tooltipHeader.setToolTipStrings(columnToolTips);
+		table.setTableHeader(tooltipHeader);
+		// header font
 		table.getTableHeader().setFont(new Font(null, Font.PLAIN, 14));
 
 		// custom renderer
 		table.setDefaultRenderer(File.class, new DefaultTableCellRenderer() {
 			@Override
 			protected void setValue(Object value) {
+				// display file name instead of full path
 				super.setText((value == null && value instanceof File) ? "" : ((File) value).getName());
 			}
 		});
+
 		// conditional styling for user-provided-MD5 column
 		table.setDefaultRenderer(String.class, new MD5CellHighlighterRenderer());
 
@@ -219,18 +239,22 @@ class FqHash extends JFrame {
 				column.setPreferredWidth(250); // third column is bigger
 			} else if (columnNames[i] == "File Size" || columnNames[i] == "Total Seq") {
 				table.getColumnModel().getColumn(i).setCellRenderer(new NumberTableCellRenderer());
+				column.setPreferredWidth(110);
 			} else {
-				column.setPreferredWidth(100);
+				column.setPreferredWidth(70);
 			}
 		}
+
+		scrollPane = new JScrollPane(table);
 
 		resultPanel.add(scrollPane);
 
 		return resultPanel;
 	}
 
+
 	// select files to add into the table
-	public void showFileOpen(Component parent) {
+	protected void showFileOpen(Component parent) {
 		// file chooser
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -249,56 +273,70 @@ class FqHash extends JFrame {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File[] files = fileChooser.getSelectedFiles();
 			for (File file : files) {
-				Object[] newrow = { file, file.length(), null, null, null, null};
+				Object[] newrow = { file, file.length(), null, null, null, null };
 				myTableModel.addRow(newrow);
 			}
 		}
 	}
 
-	public void getFileInfo(Vector tableDataVector) {
-		int idx_md5 = myTableModel.findColumn("MD5");
-		int idx_readcount = myTableModel.findColumn("Total Seq");
-		for (int i = 0; i < tableDataVector.size(); i++) {
-			File file = (File) ((Vector) tableDataVector.get(i)).get(0);
-			if (myTableModel.getValueAt(i, idx_md5) == null || myTableModel.getValueAt(i, idx_readcount) == null
-					|| myTableModel.getValueAt(i, idx_readcount) == "ERROR") {
-				// 计算Read数
-				FastQFile seqFile;
-				try {
-					seqFile = new FastQFile(file);
-					int seqCount = 0;
-					while (seqFile.hasNext()) {
-						++seqCount;
-						seqFile.next();
+
+	// calculate MD5 hash and count sequences
+	protected void getFileInfo(Vector tableDataVector) {
+		int colMD5Calculated = myTableModel.findColumn("MD5");
+		int colMD5UserProvided = myTableModel.findColumn("Total Seq");
+		for (int row = 0; row < tableDataVector.size(); row++) {
+			File file = (File) ((Vector) tableDataVector.get(row)).get(0);
+			System.out.println(new Date() + " processing " + file);
+			if (myTableModel.getValueAt(row, colMD5Calculated) == null // md5 is not calculated yet
+					|| myTableModel.getValueAt(row, colMD5UserProvided) == null // sequences not counted yet
+					|| myTableModel.getValueAt(row, colMD5UserProvided) == "ERROR") // there was an error counting sequences
+			{
+				// calculate MD5 hash
+				String md5sum = MD5.calculateMD5(file);
+				myTableModel.setValueAt(md5sum, row, colMD5Calculated);
+				
+				// count number of sequences
+				if (cbCountSeq.isSelected()) {
+					FastQFile seqFile;
+					try {
+						seqFile = new FastQFile(file);
+						int seqCount = 0;
+						while (seqFile.hasNext()) {
+							++seqCount;
+							seqFile.next();
+						}
+						myTableModel.setValueAt(seqCount, row, colMD5UserProvided);
+					} catch (SequenceFormatException | IOException e) {
+						myTableModel.setValueAt("ERROR", row, colMD5UserProvided);
 					}
-					myTableModel.setValueAt(seqCount, i, idx_readcount);
-				} catch (SequenceFormatException | IOException e) {
-					myTableModel.setValueAt("ERROR", i, idx_readcount);
 				}
 
-				// 计算MD5值
-				String md5sum = MD5.calculateMD5(file);
-				myTableModel.setValueAt(md5sum, i, idx_md5);
 			}
+			
 		}
+
 	}
 
 
+	// compare MD5 checksums, and update the column "Match"
 	protected void verifyMD5(Vector tableDataVector) {
-		int idxMD5Calculated = myTableModel.findColumn("MD5");
-		int idxMD5UserProvided = myTableModel.findColumn("Verify Checksum");
-		int idxMD5Matched = myTableModel.findColumn("Match");
-		for (int i = 0; i < tableDataVector.size(); i++) {
-			if (myTableModel.getValueAt(i, idxMD5Calculated) != null && myTableModel.getValueAt(i, idxMD5UserProvided) != null) {
-				String MD5Calculated = (String) myTableModel.getValueAt(i, idxMD5Calculated);
-				String MD5UserProvided = (String) myTableModel.getValueAt(i, idxMD5UserProvided);
-				myTableModel.setValueAt(MD5Calculated.contentEquals(MD5UserProvided), i, idxMD5Matched);
+		int colMD5Calculated = myTableModel.findColumn("MD5");
+		int colMD5UserProvided = myTableModel.findColumn("Verify Checksum");
+		int colMD5Matched = myTableModel.findColumn("Match");
+		for (int row = 0; row < tableDataVector.size(); row++) {
+			if (myTableModel.getValueAt(row, colMD5Calculated) != null
+					&& myTableModel.getValueAt(row, colMD5UserProvided) != null) {
+				String MD5Calculated = (String) myTableModel.getValueAt(row, colMD5Calculated);
+				String MD5UserProvided = (String) myTableModel.getValueAt(row, colMD5UserProvided);
+				myTableModel.setValueAt(MD5Calculated.contentEquals(MD5UserProvided), row, colMD5Matched);
 			}
 		}
 
 	}
 
-	public class NumberTableCellRenderer extends DefaultTableCellRenderer {
+
+	// use comma (,) to display numbers with thousands separator
+	protected class NumberTableCellRenderer extends DefaultTableCellRenderer {
 
 		public NumberTableCellRenderer() {
 			setHorizontalAlignment(JLabel.RIGHT);
@@ -315,35 +353,38 @@ class FqHash extends JFrame {
 
 	}
 
-	public class MD5CellHighlighterRenderer extends DefaultTableCellRenderer {
+
+	// renderer to set background color for user provided checksum, highlight matched/mismatched MD5 checksums
+	protected class MD5CellHighlighterRenderer extends DefaultTableCellRenderer {
 		@Override
-		public Component getTableCellRendererComponent(JTable table, Object obj,
-				boolean isSelected, boolean hasFocus, int row, int column) {
+		public Component getTableCellRendererComponent(JTable table, Object obj, boolean isSelected, boolean hasFocus,
+				int row, int column) {
 
 			Object md5a = table.getModel().getValueAt(row, 3);
 			Object md5b = table.getModel().getValueAt(row, 4);
 
 			Component cellComp = super.getTableCellRendererComponent(table, obj, isSelected, hasFocus, row, column);
 			if (!isSelected) {
-			if (column == 4 && md5a != null && md5b != null && md5a.equals(md5b)) {
-				// cellComp.setForeground(Color.black);
-				cellComp.setBackground(new Color(198, 240, 205));
-			} else if (column == 4 && md5a != null && md5b != null && ! md5a.equals(md5b)) {
-				// cellComp.setForeground(Color.black);
-				cellComp.setBackground(new Color(255, 200, 207));
-			} else {
-				// cellComp.setForeground(Color.black);
-				cellComp.setBackground(null);
-			}
+				if (column == 4 && md5a != null && md5b != null && md5a.equals(md5b)) {
+					// cellComp.setForeground(Color.black);
+					cellComp.setBackground(new Color(198, 240, 205));
+				} else if (column == 4 && md5a != null && md5b != null && !md5a.equals(md5b)) {
+					// cellComp.setForeground(Color.black);
+					cellComp.setBackground(new Color(255, 200, 207));
+				} else {
+					// cellComp.setForeground(Color.black);
+					cellComp.setBackground(null);
+				}
 			}
 
 			return cellComp;
 		}
 	}
 
+
 	// implementation code to set a tooltip text to each column of JTableHeader
 	// adopted from https://www.tutorialspoint.com/how-to-set-a-tooltip-to-each-column-of-a-jtableheader-in-java
-	class ToolTipHeader extends JTableHeader {
+	protected class ToolTipHeader extends JTableHeader {
 		String[] toolTips;
 
 		public ToolTipHeader(TableColumnModel model) {
@@ -371,6 +412,5 @@ class FqHash extends JFrame {
 			this.toolTips = toolTips;
 		}
 	}
-
 
 }
