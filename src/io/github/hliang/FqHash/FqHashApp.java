@@ -39,6 +39,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.SwingWorker;
 
 public class FqHashApp extends JFrame {
 
@@ -283,38 +284,88 @@ public class FqHashApp extends JFrame {
 	// calculate MD5 hash and count sequences
 	protected void getFileInfo(Vector tableDataVector) {
 		int colMD5Calculated = myTableModel.findColumn("MD5");
-		int colMD5UserProvided = myTableModel.findColumn("Total Seq");
+		int colSeqCount = myTableModel.findColumn("Total Seq");
 		for (int row = 0; row < tableDataVector.size(); row++) {
 			File file = (File) ((Vector) tableDataVector.get(row)).get(0);
-			System.out.println(new Date() + " processing " + file);
-			if (myTableModel.getValueAt(row, colMD5Calculated) == null // md5 is not calculated yet
-					|| myTableModel.getValueAt(row, colMD5UserProvided) == null // sequences not counted yet
-					|| myTableModel.getValueAt(row, colMD5UserProvided) == "ERROR") // there was an error counting sequences
-			{
-				// calculate MD5 hash
-				String md5sum = MD5.calculateMD5(file);
-				myTableModel.setValueAt(md5sum, row, colMD5Calculated);
+			System.out.println(new Date() + " start processing " + file);
+			
+			// calculate MD5 hash
+			if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
+				new MD5CalWorker(file, myTableModel, row, colMD5Calculated).execute();
 				
-				// count number of sequences
+			}
+			
+			// count number of sequences
+			if (cbCountSeq.isSelected()
+					&& (myTableModel.getValueAt(row, colSeqCount) == null || myTableModel.getValueAt(row, colSeqCount) == "ERROR"))
+			{
 				if (cbCountSeq.isSelected()) {
-					FastQFile seqFile;
-					try {
-						seqFile = new FastQFile(file);
-						int seqCount = 0;
-						while (seqFile.hasNext()) {
-							++seqCount;
-							seqFile.next();
-						}
-						myTableModel.setValueAt(seqCount, row, colMD5UserProvided);
-					} catch (SequenceFormatException | IOException e) {
-						myTableModel.setValueAt("ERROR", row, colMD5UserProvided);
-					}
+					new SeqCountWorker(file, myTableModel, row, colSeqCount).execute();
 				}
-
+					
 			}
 			
 		}
 
+	}
+	
+	// SwingWorker for calculating MD5 hash
+	private class MD5CalWorker extends SwingWorker<Void, Void> {
+		private File file;
+		private DefaultTableModel tableModel;
+		private int row;
+		private int col;
+		
+		public MD5CalWorker(File file, DefaultTableModel tableModel, int row, int col) {
+			this.file = file;
+			this.tableModel = tableModel;
+			this.row = row;
+			this.col = col;
+			
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			// calculate MD5 hash
+			String md5sum = MD5.calculateMD5(file);
+			myTableModel.setValueAt(md5sum, row, col);
+			return null;
+		}
+		
+	}
+	
+	// SwingWorker for calculating MD5 hash
+	private class SeqCountWorker extends SwingWorker<Void, Void> {
+		private File file;
+		private DefaultTableModel tableModel;
+		private int row;
+		private int col;
+		
+		public SeqCountWorker(File file, DefaultTableModel tableModel, int row, int col) {
+			this.file = file;
+			this.tableModel = tableModel;
+			this.row = row;
+			this.col = col;
+			
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			FastQFile seqFile;
+			try {
+				seqFile = new FastQFile(file);
+				int seqCount = 0;
+				while (seqFile.hasNext()) {
+					++seqCount;
+					seqFile.next();
+				}
+				myTableModel.setValueAt(seqCount, row, col);
+			} catch (SequenceFormatException | IOException e) {
+				myTableModel.setValueAt("ERROR", row, col);
+			}
+			return null;
+		}
+		
 	}
 
 
