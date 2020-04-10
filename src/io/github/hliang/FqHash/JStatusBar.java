@@ -1,4 +1,4 @@
-package io.github.hliang.FqMD5;
+package io.github.hliang.FqHash;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -10,7 +10,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-//import io.github.hliang.FqMD5.SeparatorPanel;
+//import io.github.hliang.FqHash.SeparatorPanel;
 
 public class JStatusBar extends JPanel {
 

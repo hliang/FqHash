@@ -1,4 +1,4 @@
-package io.github.hliang.FqMD5;
+package io.github.hliang.FqHash;
 
 import java.awt.Color;
 import java.awt.Graphics;
