@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Date;
+import java.util.Random;
 import java.util.Vector;
 import java.awt.event.ActionEvent;
 import javax.swing.JCheckBox;
@@ -52,6 +53,7 @@ public class FqHashApp extends JFrame {
 	private JScrollPane scrollPane;
 	private JTable table;
 	private DefaultTableModel myTableModel;
+	private FqHashWorker fqhashWorker;
 
 	/**
 	 * Launch the application.
@@ -86,7 +88,7 @@ public class FqHashApp extends JFrame {
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showFileOpen(contentPane);
-				if (myTableModel.getDataVector() != null) {
+				if (myTableModel.getRowCount() > 0) {
 					btnAnalyze.setEnabled(true);
 					btnVerify.setEnabled(true);
 				} else {
@@ -108,7 +110,27 @@ public class FqHashApp extends JFrame {
 		// analyze the files
 		btnAnalyze.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				getFileInfo(myTableModel.getDataVector());
+				if ("Analyze".equalsIgnoreCase(btnAnalyze.getText())) {
+					
+					btnAdd.setEnabled(false);
+					btnClear.setEnabled(false);
+					btnAnalyze.setText("Stop");
+					cbCountSeq.setEnabled(false);
+					
+//					getFileInfo(myTableModel.getDataVector());
+					fqhashWorker = new FqHashWorker();
+					fqhashWorker.execute();
+					
+				} else if ("Stop".equalsIgnoreCase(btnAnalyze.getText())) {
+					// cancel background task
+					fqhashWorker.cancel(true);
+					fqhashWorker = null;
+					
+					cbCountSeq.setEnabled(true);
+					btnAnalyze.setText("Analyze");
+					btnClear.setEnabled(true);
+					btnAdd.setEnabled(true);
+				}
 			}
 		});
 
@@ -155,8 +177,8 @@ public class FqHashApp extends JFrame {
 		btnVerify = new JButton("Verify");
 
 		cbCountSeq = new JCheckBox("Count Sequences");
-		cbCountSeq.setSelected(true);
-
+		cbCountSeq.setSelected(false);
+		
 		// set tool tips
 		btnAnalyze.setToolTipText("Count sequences and calculate MD5 hash");
 		btnVerify.setToolTipText("Verify MD5 Checksum");
@@ -187,7 +209,7 @@ public class FqHashApp extends JFrame {
 				Boolean.class };
 		String[] columnNames = { "File Name", "File Size", "Total Seq", "MD5", "Verify Checksum", "Match" };
 		String[] columnToolTips = { null, null, null, "Current file MD5 checksum value",
-				"Enter original md5 value to verify", "If checked, MD5 checksums match" };
+				"Enter original MD5 value to verify", "If checked, MD5 checksums match" };
 		myTableModel = new DefaultTableModel(columnNames, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
@@ -309,6 +331,66 @@ public class FqHashApp extends JFrame {
 
 	}
 	
+	// single SwingWorker to do the analysis for all all input files -- so only one thread is used
+	private class FqHashWorker extends SwingWorker<Void, Void> {
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			int colFile = myTableModel.findColumn("File Name");
+			int colMD5Calculated = myTableModel.findColumn("MD5");
+			int colSeqCount = myTableModel.findColumn("Total Seq");
+			
+//			while (!isCancelled()) {
+				for (int row = 0; row < myTableModel.getRowCount(); row++) {
+					
+					File file = (File) myTableModel.getValueAt(row, colFile);
+					System.out.println("row " + row + " " + new Date() + " " + file + " started ");
+					
+					
+					// calculate MD5 hash
+					if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
+						Thread.sleep(new Random().nextInt(5000));  // for test
+						String md5sum = MD5.calculateMD5(file);
+						myTableModel.setValueAt(md5sum, row, colMD5Calculated);
+					}
+					
+					// counting sequences
+					if (cbCountSeq.isSelected()
+							&& (myTableModel.getValueAt(row, colSeqCount) == null || myTableModel.getValueAt(row, colSeqCount) == "ERROR"))
+					{
+						try {
+							Thread.sleep(new Random().nextInt(5000));  // for test
+							FastQFile seqFile = new FastQFile(file);
+							int seqCount = 0;
+							while (seqFile.hasNext()) {
+								++seqCount;
+								seqFile.next();
+							}
+							myTableModel.setValueAt(seqCount, row, colSeqCount);
+						} catch (SequenceFormatException | IOException e) {
+							myTableModel.setValueAt("ERROR", row, colSeqCount);
+						}
+					}
+					
+					System.out.println("row " + row + " " + new Date() + " " + file + " done ");
+					
+				}
+				
+//			}
+			
+			return null;
+		}
+
+		@Override
+		protected void done() {
+			System.out.println(new Date() + " task done ");
+			cbCountSeq.setEnabled(true);
+			btnAnalyze.setText("Analyze");
+			btnClear.setEnabled(true);
+			btnAdd.setEnabled(true);
+		}
+	}
+
 	// SwingWorker for calculating MD5 hash
 	private class MD5CalWorker extends SwingWorker<Void, Void> {
 		private File file;
@@ -334,7 +416,7 @@ public class FqHashApp extends JFrame {
 		
 	}
 	
-	// SwingWorker for calculating MD5 hash
+	// SwingWorker for counting sequences
 	private class SeqCountWorker extends SwingWorker<Void, Void> {
 		private File file;
 		private DefaultTableModel tableModel;
