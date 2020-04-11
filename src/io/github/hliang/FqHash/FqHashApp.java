@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 import java.awt.event.ActionEvent;
@@ -43,6 +44,8 @@ import javax.swing.JTable;
 import javax.swing.SwingWorker;
 
 public class FqHashApp extends JFrame {
+
+	public static final String VERSION = "0.1";
 
 	private JPanel contentPane;
 	private JButton btnAdd;
@@ -111,7 +114,6 @@ public class FqHashApp extends JFrame {
 		btnAnalyze.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if ("Analyze".equalsIgnoreCase(btnAnalyze.getText())) {
-					
 					btnAdd.setEnabled(false);
 					btnClear.setEnabled(false);
 					btnAnalyze.setText("Stop");
@@ -332,58 +334,77 @@ public class FqHashApp extends JFrame {
 	}
 	
 	// single SwingWorker to do the analysis for all all input files -- so only one thread is used
-	private class FqHashWorker extends SwingWorker<Void, Void> {
+	private class FqHashWorker extends SwingWorker<Void, Object[]> {
+		int colFile = myTableModel.findColumn("File Name");
+		int colMD5Calculated = myTableModel.findColumn("MD5");
+		int colSeqCount = myTableModel.findColumn("Total Seq");
 
 		@Override
 		protected Void doInBackground() throws Exception {
-			int colFile = myTableModel.findColumn("File Name");
-			int colMD5Calculated = myTableModel.findColumn("MD5");
-			int colSeqCount = myTableModel.findColumn("Total Seq");
+			String md5sum = null;
+			Integer seqCount = null;
 			
-//			while (!isCancelled()) {
 				for (int row = 0; row < myTableModel.getRowCount(); row++) {
 					
 					File file = (File) myTableModel.getValueAt(row, colFile);
-					System.out.println("row " + row + " " + new Date() + " " + file + " started ");
 					
 					
 					// calculate MD5 hash
 					if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
 						Thread.sleep(new Random().nextInt(5000));  // for test
-						String md5sum = MD5.calculateMD5(file);
-						myTableModel.setValueAt(md5sum, row, colMD5Calculated);
+						md5sum = MD5.calculateMD5(file);
+						Object[] newCellData = {row, colMD5Calculated, md5sum};
+						publish(newCellData);
 					}
-					
-					// counting sequences
+
+					// count sequences
 					if (cbCountSeq.isSelected()
 							&& (myTableModel.getValueAt(row, colSeqCount) == null || myTableModel.getValueAt(row, colSeqCount) == "ERROR"))
 					{
 						try {
 							Thread.sleep(new Random().nextInt(5000));  // for test
 							FastQFile seqFile = new FastQFile(file);
-							int seqCount = 0;
+							seqCount = 0;
 							while (seqFile.hasNext()) {
 								++seqCount;
 								seqFile.next();
 							}
-							myTableModel.setValueAt(seqCount, row, colSeqCount);
 						} catch (SequenceFormatException | IOException e) {
-							myTableModel.setValueAt("ERROR", row, colSeqCount);
+							seqCount = -1;
 						}
+						Object[] newCellData = {row, colSeqCount, seqCount};
+						publish(newCellData);
 					}
-					
-					System.out.println("row " + row + " " + new Date() + " " + file + " done ");
-					
+
 				}
 				
-//			}
 			
 			return null;
+		}
+		
+		@Override
+		protected void process(List<Object[]> chunks) {
+			for (Object[] newCellData : chunks) {
+				int row = (int) newCellData[0];
+				int col = (int) newCellData[1];
+				// update MD5
+				if (col == colMD5Calculated) {
+					myTableModel.setValueAt(newCellData[2], row, colMD5Calculated);
+				}
+				// update number of sequences
+				if (col == colSeqCount) {
+					if ((int) newCellData[2] < 0) {
+						myTableModel.setValueAt("ERROR", row, colSeqCount);
+					} else {
+						myTableModel.setValueAt(newCellData[2], row, colSeqCount);
+					}
+				}
+
+	         }
 		}
 
 		@Override
 		protected void done() {
-			System.out.println(new Date() + " task done ");
 			cbCountSeq.setEnabled(true);
 			btnAnalyze.setText("Analyze");
 			btnClear.setEnabled(true);
