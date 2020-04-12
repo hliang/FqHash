@@ -13,8 +13,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -23,6 +21,7 @@ import javax.swing.table.TableColumnModel;
 
 import com.cyanogenmod.updater.utils.MD5;
 
+import uk.ac.babraham.FastQC.FileFilters.SequenceFileFilter;
 import uk.ac.babraham.FastQC.Sequence.FastQFile;
 import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 
@@ -91,7 +90,7 @@ public class FqHashApp extends JFrame {
 		// show "Open File" dialog
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showFileOpen(contentPane);
+				showFileOpen();
 				if (myTableModel.getRowCount() > 0) {
 					btnAnalyze.setEnabled(true);
 					btnVerify.setEnabled(true);
@@ -301,30 +300,29 @@ public class FqHashApp extends JFrame {
 
 
 	// select files to add into the table
-	protected void showFileOpen(Component parent) {
+	protected void showFileOpen() {
 		// file chooser
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileChooser.setMultiSelectionEnabled(true);
 		// TODO custom file filter for all types of sequence files
-		FileFilter ffilterGZ = new FileNameExtensionFilter("gzip file", "gz");
-		FileFilter ffilterSH = new FileNameExtensionFilter("sh file", "sh");
-		FileFilter ffilterBAM = new FileNameExtensionFilter("bam", "bam");
-		fileChooser.addChoosableFileFilter(ffilterGZ);
-		fileChooser.addChoosableFileFilter(ffilterSH);
-		fileChooser.addChoosableFileFilter(ffilterBAM);
-		fileChooser.setAcceptAllFileFilterUsed(true); // false: hide the "[All files]" option
-		// 接受结果
-		int result = fileChooser.showOpenDialog(parent);
-		// 是否选择了文件
+		SequenceFileFilter sff = new SequenceFileFilter();
+		fileChooser.setFileFilter(sff);
+		// pops up an "Open File" file chooser dialog
+		int result = fileChooser.showOpenDialog(this);
+		// if any file is chosen
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File[] files = fileChooser.getSelectedFiles();
 			for (File file : files) {
 				Object[] newrow = { file, file.length(), null, null, null, null };
 				myTableModel.addRow(newrow);
 			}
+		} else if (result == JFileChooser.CANCEL_OPTION) {
+			return;
 		}
 	}
+	
+	
 
 
 	// calculate MD5 hash and count sequences
