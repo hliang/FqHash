@@ -437,7 +437,7 @@ public class FqHashApp extends JFrame {
 				// update number of sequences
 				if (newCellData.col == colSeqCount) {
 					if ( ((int) newCellData.val) < 0) {
-						myTableModel.setValueAt("ERROR", newCellData.row, newCellData.row);
+						myTableModel.setValueAt("ERROR", newCellData.row, newCellData.col);
 					} else {
 						myTableModel.setValueAt(newCellData.val, newCellData.row, newCellData.col);
 					}
