@@ -54,6 +54,7 @@ public class FqHashApp extends JFrame {
 	private JButton btnVerify;
 	private JCheckBox cbCountSeq;
 	private JScrollPane scrollPane;
+	private JLabel currTaskLabel;
 	private JTable table;
 	private DefaultTableModel myTableModel;
 	private FqHashWorker fqhashWorker;
@@ -107,6 +108,7 @@ public class FqHashApp extends JFrame {
 				myTableModel.setRowCount(0);
 				btnAnalyze.setEnabled(false);
 				btnVerify.setEnabled(false);
+				currTaskLabel.setText("Select files to start");
 			}
 		});
 
@@ -132,6 +134,7 @@ public class FqHashApp extends JFrame {
 					btnAnalyze.setText("Analyze");
 					btnClear.setEnabled(true);
 					btnAdd.setEnabled(true);
+					currTaskLabel.setText("Stopped");
 				}
 			}
 		});
@@ -151,6 +154,7 @@ public class FqHashApp extends JFrame {
 	private void initComponens() {
 		setTitle("FqHash");
 		setSize(1000, 600);
+		setMinimumSize(new Dimension(600, 300));
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -161,9 +165,11 @@ public class FqHashApp extends JFrame {
 
 		JPanel controlPanel = createControlPanel();
 		JPanel resultPanel = createResultPanel();
+		JStatusBar statusBar = createStatusBar();
 
 		contentPane.add(controlPanel, BorderLayout.NORTH);
 		contentPane.add(resultPanel, BorderLayout.CENTER);
+		contentPane.add(statusBar, BorderLayout.SOUTH);
 
 	}
 
@@ -278,6 +284,22 @@ public class FqHashApp extends JFrame {
 	}
 
 
+	// status bar
+	private JStatusBar createStatusBar() {
+		JStatusBar statusBar = new JStatusBar();
+		statusBar.setBorder(BorderFactory.createEtchedBorder());
+		
+		currTaskLabel = new JLabel("Select files to start");
+		statusBar.setLeftComponent(currTaskLabel);
+		
+		final JLabel versionLabel = new JLabel("FqHash v" + VERSION);
+		versionLabel.setHorizontalAlignment(JLabel.CENTER);
+		statusBar.addRightComponent(versionLabel);
+		
+		return statusBar;
+	}
+
+
 	// select files to add into the table
 	protected void showFileOpen(Component parent) {
 		// file chooser
@@ -333,8 +355,25 @@ public class FqHashApp extends JFrame {
 
 	}
 	
+	
+	// custom class CellData used for for SwingWorker.publish()
+	private class CellData {
+		File file;
+		int row;
+		int col;
+		Object val;
+
+		public CellData(File file, int row, int col, Object val) {
+			this.file = file;
+			this.row = row;
+			this.col = col;
+			this.val = val;
+		}
+	}
+	
+	
 	// single SwingWorker to do the analysis for all all input files -- so only one thread is used
-	private class FqHashWorker extends SwingWorker<Void, Object[]> {
+	private class FqHashWorker extends SwingWorker<Void, CellData> {
 		int colFile = myTableModel.findColumn("File Name");
 		int colMD5Calculated = myTableModel.findColumn("MD5");
 		int colSeqCount = myTableModel.findColumn("Total Seq");
@@ -343,17 +382,19 @@ public class FqHashApp extends JFrame {
 		protected Void doInBackground() throws Exception {
 			String md5sum = null;
 			Integer seqCount = null;
-			
+						
 				for (int row = 0; row < myTableModel.getRowCount(); row++) {
 					
 					File file = (File) myTableModel.getValueAt(row, colFile);
 					
+					CellData newCellData = new CellData(file, -1, -1, null);
+					publish(newCellData);  // update status bar to show file being processed
 					
 					// calculate MD5 hash
 					if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
 						Thread.sleep(new Random().nextInt(5000));  // for test
 						md5sum = MD5.calculateMD5(file);
-						Object[] newCellData = {row, colMD5Calculated, md5sum};
+						newCellData = new CellData(file, row, colMD5Calculated, md5sum);
 						publish(newCellData);
 					}
 
@@ -372,7 +413,7 @@ public class FqHashApp extends JFrame {
 						} catch (SequenceFormatException | IOException e) {
 							seqCount = -1;
 						}
-						Object[] newCellData = {row, colSeqCount, seqCount};
+						newCellData = new CellData(file, row, colSeqCount, seqCount);
 						publish(newCellData);
 					}
 
@@ -383,20 +424,22 @@ public class FqHashApp extends JFrame {
 		}
 		
 		@Override
-		protected void process(List<Object[]> chunks) {
-			for (Object[] newCellData : chunks) {
-				int row = (int) newCellData[0];
-				int col = (int) newCellData[1];
+		protected void process(List<CellData> chunks) {
+			for (CellData newCellData : chunks) {
+				if (newCellData.val == null) {  // update status bar to show file being processed
+					currTaskLabel.setText("Processing ... " + newCellData.file);
+					return;
+				}
 				// update MD5
-				if (col == colMD5Calculated) {
-					myTableModel.setValueAt(newCellData[2], row, colMD5Calculated);
+				if (newCellData.col == colMD5Calculated) {
+					myTableModel.setValueAt(newCellData.val, newCellData.row, newCellData.col);
 				}
 				// update number of sequences
-				if (col == colSeqCount) {
-					if ((int) newCellData[2] < 0) {
-						myTableModel.setValueAt("ERROR", row, colSeqCount);
+				if (newCellData.col == colSeqCount) {
+					if ( ((int) newCellData.val) < 0) {
+						myTableModel.setValueAt("ERROR", newCellData.row, newCellData.row);
 					} else {
-						myTableModel.setValueAt(newCellData[2], row, colSeqCount);
+						myTableModel.setValueAt(newCellData.val, newCellData.row, newCellData.col);
 					}
 				}
 
@@ -409,6 +452,7 @@ public class FqHashApp extends JFrame {
 			btnAnalyze.setText("Analyze");
 			btnClear.setEnabled(true);
 			btnAdd.setEnabled(true);
+			currTaskLabel.setText("Done");
 		}
 	}
 
