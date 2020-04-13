@@ -404,10 +404,11 @@ public class FqHashApp extends JFrame {
 					
 					// calculate MD5 hash
 					if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
-						Thread.sleep(new Random().nextInt(5000));  // for test
+						//Thread.sleep(new Random().nextInt(5000));  // for test
 						md5sum = MD5.calculateMD5(file);
 						newCellData = new CellData(file, row, colMD5Calculated, md5sum);
 						publish(newCellData);
+						Thread.yield();
 					}
 
 					// count sequences
@@ -415,7 +416,7 @@ public class FqHashApp extends JFrame {
 							&& (myTableModel.getValueAt(row, colSeqCount) == null || myTableModel.getValueAt(row, colSeqCount) == "ERROR"))
 					{
 						try {
-							Thread.sleep(new Random().nextInt(5000));  // for test
+							//Thread.sleep(new Random().nextInt(5000));  // for test
 							FastQFile seqFile = new FastQFile(file);
 							seqCount = 0;
 							while (seqFile.hasNext()) {
@@ -427,6 +428,7 @@ public class FqHashApp extends JFrame {
 						}
 						newCellData = new CellData(file, row, colSeqCount, seqCount);
 						publish(newCellData);
+						Thread.yield();
 					}
 
 				}
@@ -440,7 +442,7 @@ public class FqHashApp extends JFrame {
 			for (CellData newCellData : chunks) {
 				if (newCellData.val == null) {  // update status bar to show file being processed
 					currTaskLabel.setText("Processing ... " + newCellData.file);
-					return;
+					continue;
 				}
 				// update MD5
 				if (newCellData.col == colMD5Calculated) {
