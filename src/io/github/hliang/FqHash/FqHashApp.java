@@ -9,6 +9,7 @@ import java.awt.Font;
 import java.awt.GridLayout;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -118,6 +119,7 @@ public class FqHashApp extends JFrame {
 					btnAdd.setEnabled(false);
 					btnClear.setEnabled(false);
 					btnAnalyze.setText("Stop");
+					btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/stop-32.png")));
 					cbCountSeq.setEnabled(false);
 					
 //					getFileInfo(myTableModel.getDataVector());
@@ -131,6 +133,7 @@ public class FqHashApp extends JFrame {
 					
 					cbCountSeq.setEnabled(true);
 					btnAnalyze.setText("Analyze");
+					btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
 					btnClear.setEnabled(true);
 					btnAdd.setEnabled(true);
 					currTaskLabel.setText("Stopped");
@@ -156,6 +159,9 @@ public class FqHashApp extends JFrame {
 		setMinimumSize(new Dimension(600, 300));
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		// set the icon displayed when the window is minimized
+		setIconImage(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/sandcastle-256.png")).getImage());
 
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -175,7 +181,7 @@ public class FqHashApp extends JFrame {
 
 	// control panel
 	private JPanel createControlPanel() {
-		JPanel controlPanel = new JPanel();
+		JPanel controlPanel = new JPanel(new GridLayout(0,7));
 		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
 
 		btnAdd = new JButton("Add Files");
@@ -186,6 +192,12 @@ public class FqHashApp extends JFrame {
 		cbCountSeq = new JCheckBox("Count Sequences");
 		cbCountSeq.setSelected(false);
 		
+		// set icon
+		btnAdd.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/folder-32.png")));
+		btnClear.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/trash-32.png")));
+		btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
+		btnVerify.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/verify-32.png")));
+		
 		// set tool tips
 		btnAnalyze.setToolTipText("Count sequences and calculate MD5 hash");
 		btnVerify.setToolTipText("Verify MD5 Checksum");
@@ -195,11 +207,13 @@ public class FqHashApp extends JFrame {
 		btnVerify.setEnabled(false);
 
 		// add button to control panel
+		controlPanel.add(new JLabel()); // just a place holder
 		controlPanel.add(btnAdd);
 		controlPanel.add(btnClear);
 		controlPanel.add(cbCountSeq);
 		controlPanel.add(btnAnalyze);
 		controlPanel.add(btnVerify);
+		controlPanel.add(new JLabel()); // just a place holder
 
 		return controlPanel;
 	}
@@ -291,7 +305,7 @@ public class FqHashApp extends JFrame {
 		currTaskLabel = new JLabel("Select files to start");
 		statusBar.setLeftComponent(currTaskLabel);
 		
-		final JLabel versionLabel = new JLabel("FqHash v" + VERSION);
+		final JLabel versionLabel = new JLabel("v" + VERSION);
 		versionLabel.setHorizontalAlignment(JLabel.CENTER);
 		statusBar.addRightComponent(versionLabel);
 		
@@ -305,7 +319,7 @@ public class FqHashApp extends JFrame {
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileChooser.setMultiSelectionEnabled(true);
-		// TODO custom file filter for all types of sequence files
+		// custom file filter for all types of sequence files
 		SequenceFileFilter sff = new SequenceFileFilter();
 		fileChooser.setFileFilter(sff);
 		// pops up an "Open File" file chooser dialog
@@ -448,6 +462,7 @@ public class FqHashApp extends JFrame {
 		protected void done() {
 			cbCountSeq.setEnabled(true);
 			btnAnalyze.setText("Analyze");
+			btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
 			btnClear.setEnabled(true);
 			btnAdd.setEnabled(true);
 			currTaskLabel.setText("Done");
