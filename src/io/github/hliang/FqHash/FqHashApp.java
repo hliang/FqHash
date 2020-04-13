@@ -32,9 +32,10 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.Vector;
 import java.awt.event.ActionEvent;
 import javax.swing.JCheckBox;
@@ -184,7 +185,7 @@ public class FqHashApp extends JFrame {
 		JPanel controlPanel = new JPanel(new GridLayout(0,7));
 		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
 
-		btnAdd = new JButton("Add Files");
+		btnAdd = new JButton("Add File/Folder");
 		btnClear = new JButton("Clear");
 		btnAnalyze = new JButton("Analyze");
 		btnVerify = new JButton("Verify");
@@ -199,6 +200,8 @@ public class FqHashApp extends JFrame {
 		btnVerify.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/verify-32.png")));
 		
 		// set tool tips
+		btnAdd.setToolTipText("Select files or folders (all sequence files inside will be added)");
+		btnClear.setToolTipText("Remove all rows in the table");
 		btnAnalyze.setToolTipText("Count sequences and calculate MD5 hash");
 		btnVerify.setToolTipText("Verify MD5 Checksum");
 
@@ -317,7 +320,7 @@ public class FqHashApp extends JFrame {
 	protected void showFileOpen() {
 		// file chooser
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		fileChooser.setMultiSelectionEnabled(true);
 		// custom file filter for all types of sequence files
 		SequenceFileFilter sff = new SequenceFileFilter();
@@ -328,15 +331,49 @@ public class FqHashApp extends JFrame {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File[] files = fileChooser.getSelectedFiles();
 			for (File file : files) {
-				Object[] newrow = { file, file.length(), null, null, null, null };
-				myTableModel.addRow(newrow);
+				if (file.isDirectory()) {  // traverse files in folder
+					String[] seqFileSuffixes = {".txt", ".fastq", ".fq",
+							".txt.gz", ".fastq.gz", ".fq.gz",
+							".txt.bz", ".fastq.bz", ".fq.bz",
+							".txt.bz2", ".fastq.bz2", ".fq.bz2",
+							".bam", ".sam", ".compact-reads", ".goby"};
+					List<File> filesInDir = findFiles(file, seqFileSuffixes);
+					filesInDir.forEach(aFile -> {
+						Object[] newrow = { aFile, aFile.length(), null, null, null, null };
+						myTableModel.addRow(newrow);
+					});
+				} else {  // regular file, just add it to table
+					Object[] newrow = { file, file.length(), null, null, null, null };
+					myTableModel.addRow(newrow);
+				}
 			}
 		} else if (result == JFileChooser.CANCEL_OPTION) {
 			return;
 		}
 	}
 	
-	
+
+	/**
+	 * Traverse a directory and search for all files matching file name extensions/suffixes.
+	 * @param dir the {@code File} folder to search
+	 * @param suffixes the accepted file name extensions/suffixes. If suffixes is null or empty, any file format is accepted
+	 * @return a List of File
+	 */
+	public static List<File> findFiles(File dir, String[] suffixes) {
+		ArrayList<File> result = new ArrayList<>();
+		File[] files = dir.listFiles(f -> f.isDirectory() || suffixes == null || suffixes.length == 0
+				|| Arrays.stream(suffixes).filter(suf -> f.getName().toLowerCase().endsWith(suf)).count() > 0);
+		if (files != null) {
+			for (File file : files) {
+				if (file.isDirectory()) {
+					result.addAll(findFiles(file, suffixes));
+				} else {
+					result.add(file);
+				}
+			}
+		}
+		return result;
+	}
 
 
 	// calculate MD5 hash and count sequences
