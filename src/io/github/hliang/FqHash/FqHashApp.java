@@ -444,8 +444,10 @@ public class FqHashApp extends JFrame {
 		protected Void doInBackground() throws Exception {
 			String md5sum = null;
 			Integer seqCount = null;
-						
 				for (int row = 0; row < myTableModel.getRowCount(); row++) {
+					if (isCancelled()) {
+						return null;
+					}
 					
 					File file = (File) myTableModel.getValueAt(row, colFile);
 					
@@ -455,8 +457,12 @@ public class FqHashApp extends JFrame {
 					// calculate MD5 hash
 					if (myTableModel.getValueAt(row, colMD5Calculated) == null) {  // md5 is not calculated yet
 						//Thread.sleep(new Random().nextInt(5000));  // for test
-						md5sum = MD5.calculateMD5(file);
+						md5sum = MD5.calculateMD5(file);  // TODO: modify MD5.calculateMD5(), so the calculation can be canceled/interrupted
 						newCellData = new CellData(file, row, colMD5Calculated, md5sum);
+						
+						if (isCancelled()) {
+							return null;
+						}
 						publish(newCellData);
 						Thread.yield();
 					}
@@ -469,7 +475,7 @@ public class FqHashApp extends JFrame {
 							//Thread.sleep(new Random().nextInt(5000));  // for test
 							FastQFile seqFile = new FastQFile(file);
 							seqCount = 0;
-							while (seqFile.hasNext()) {
+							while (!isCancelled() && seqFile.hasNext()) {
 								++seqCount;
 								seqFile.next();
 							}
@@ -477,13 +483,16 @@ public class FqHashApp extends JFrame {
 							seqCount = -1;
 						}
 						newCellData = new CellData(file, row, colSeqCount, seqCount);
+						
+						if (isCancelled()) {
+							return null;
+						}
 						publish(newCellData);
 						Thread.yield();
 					}
 
 				}
 				
-			
 			return null;
 		}
 		
