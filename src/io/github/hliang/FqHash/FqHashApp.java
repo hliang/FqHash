@@ -29,6 +29,8 @@ import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -117,27 +119,15 @@ public class FqHashApp extends JFrame {
 		btnAnalyze.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if ("Analyze".equalsIgnoreCase(btnAnalyze.getText())) {
-					btnAdd.setEnabled(false);
-					btnClear.setEnabled(false);
-					btnAnalyze.setText("Stop");
-					btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/stop-32.png")));
-					cbCountSeq.setEnabled(false);
-					
 //					getFileInfo(myTableModel.getDataVector());
 					fqhashWorker = new FqHashWorker();
+					fqhashWorker.addPropertyChangeListener(new WorkerStateListener());
 					fqhashWorker.execute();
 					
 				} else if ("Stop".equalsIgnoreCase(btnAnalyze.getText())) {
 					// cancel background task
 					fqhashWorker.cancel(true);
-					fqhashWorker = null;
-					
-					cbCountSeq.setEnabled(true);
-					btnAnalyze.setText("Analyze");
-					btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
-					btnClear.setEnabled(true);
-					btnAdd.setEnabled(true);
-					currTaskLabel.setText("Stopped");
+//					fqhashWorker = null;
 				}
 			}
 		});
@@ -148,7 +138,30 @@ public class FqHashApp extends JFrame {
 				verifyMD5(myTableModel.getDataVector());
 			}
 		});
+		
 	}
+	
+	
+	private class WorkerStateListener implements PropertyChangeListener {
+
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if (e.getNewValue() == SwingWorker.StateValue.STARTED) {
+            	btnAdd.setEnabled(false);
+				btnClear.setEnabled(false);
+				btnAnalyze.setText("Stop");
+				btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/stop-32.png")));
+				cbCountSeq.setEnabled(false);
+            } else if (e.getNewValue() == SwingWorker.StateValue.DONE) {
+            	cbCountSeq.setEnabled(true);
+				btnAnalyze.setText("Analyze");
+				btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
+				btnClear.setEnabled(true);
+				btnAdd.setEnabled(true);
+				currTaskLabel.setText("Stopped");
+            }
+        }
+    }
 
 
 	//////////////////////////////////////////////////
