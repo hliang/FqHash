@@ -14,6 +14,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -28,6 +30,7 @@ import uk.ac.babraham.FastQC.Sequence.SequenceFormatException;
 
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -52,7 +55,7 @@ public class FqHashApp extends JFrame {
 
 	private JPanel contentPane;
 	private JButton btnAdd;
-	private JButton btnClear;
+	private JButton btnDelete;
 	private JButton btnAnalyze;
 	private JButton btnVerify;
 	private JCheckBox cbCountSeq;
@@ -95,23 +98,13 @@ public class FqHashApp extends JFrame {
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showFileOpen();
-				if (myTableModel.getRowCount() > 0) {
-					btnAnalyze.setEnabled(true);
-					btnVerify.setEnabled(true);
-				} else {
-					btnAnalyze.setEnabled(false);
-					btnVerify.setEnabled(false);
-				}
 			}
 		});
 
-		// clear all data in table
-		btnClear.addActionListener(new ActionListener() {
+		// clear selected rows in table
+		btnDelete.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				myTableModel.setRowCount(0);
-				btnAnalyze.setEnabled(false);
-				btnVerify.setEnabled(false);
-				currTaskLabel.setText("Select files to start");
+				deleteSelectedRows(table);
 			}
 		});
 
@@ -139,6 +132,43 @@ public class FqHashApp extends JFrame {
 			}
 		});
 		
+		// clear selection
+		contentPane.addMouseListener(new MouseAdapter() {
+		    @Override
+		    public void mouseClicked(MouseEvent e) {
+		        if(!table.contains(e.getPoint())) { // contains(Point point) method is inherited from java.awt.Component
+		            table.clearSelection();
+		        }
+		    }
+		});
+		
+		// change button status (enabled/disabled) based on table Data Changes
+		table.getModel().addTableModelListener(new TableModelListener() {
+
+			@Override
+			public void tableChanged(TableModelEvent e) {
+				if (((DefaultTableModel) e.getSource()).getRowCount() > 0 ) {
+					if (fqhashWorker == null || fqhashWorker.getState() == SwingWorker.StateValue.DONE) {
+						btnAdd.setEnabled(true);
+						btnDelete.setEnabled(true);
+						btnAnalyze.setEnabled(true);
+						btnVerify.setEnabled(true);
+					} else {
+						btnAdd.setEnabled(false);
+						btnDelete.setEnabled(false);
+						btnAnalyze.setEnabled(true);
+						btnVerify.setEnabled(true);
+					}
+				} else {
+					btnAdd.setEnabled(true);
+					btnDelete.setEnabled(false);
+					btnAnalyze.setEnabled(false);
+					btnVerify.setEnabled(false);
+				}
+			}
+			
+		});
+		
 	}
 	
 	
@@ -148,7 +178,7 @@ public class FqHashApp extends JFrame {
         public void propertyChange(PropertyChangeEvent e) {
             if (e.getNewValue() == SwingWorker.StateValue.STARTED) {
             	btnAdd.setEnabled(false);
-				btnClear.setEnabled(false);
+				btnDelete.setEnabled(false);
 				btnAnalyze.setText("Stop");
 				btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/stop-32.png")));
 				cbCountSeq.setEnabled(false);
@@ -156,9 +186,10 @@ public class FqHashApp extends JFrame {
             	cbCountSeq.setEnabled(true);
 				btnAnalyze.setText("Analyze");
 				btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
-				btnClear.setEnabled(true);
+				btnDelete.setEnabled(true);
 				btnAdd.setEnabled(true);
 				currTaskLabel.setText("Stopped");
+				btnVerify.setEnabled(true);
             }
         }
     }
@@ -199,7 +230,7 @@ public class FqHashApp extends JFrame {
 		controlPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
 
 		btnAdd = new JButton("Add File/Folder");
-		btnClear = new JButton("Clear");
+		btnDelete = new JButton("Delete");
 		btnAnalyze = new JButton("Analyze");
 		btnVerify = new JButton("Verify");
 
@@ -208,24 +239,25 @@ public class FqHashApp extends JFrame {
 		
 		// set icon
 		btnAdd.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/folder-32.png")));
-		btnClear.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/trash-32.png")));
+		btnDelete.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/row_delete-32.png")));
 		btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
 		btnVerify.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/verify-32.png")));
 		
 		// set tool tips
 		btnAdd.setToolTipText("Select files or folders (all sequence files inside will be added)");
-		btnClear.setToolTipText("Remove all rows in the table");
+		btnDelete.setToolTipText("Delete selected rows");
 		btnAnalyze.setToolTipText("Count sequences and calculate MD5 hash");
 		btnVerify.setToolTipText("Verify MD5 Checksum");
 
 		// disable buttons when they are created the first time
 		btnAnalyze.setEnabled(false);
 		btnVerify.setEnabled(false);
+		btnDelete.setEnabled(false);
 
 		// add button to control panel
 		controlPanel.add(new JLabel()); // just a place holder
 		controlPanel.add(btnAdd);
-		controlPanel.add(btnClear);
+		controlPanel.add(btnDelete);
 		controlPanel.add(cbCountSeq);
 		controlPanel.add(btnAnalyze);
 		controlPanel.add(btnVerify);
@@ -524,7 +556,8 @@ public class FqHashApp extends JFrame {
 			cbCountSeq.setEnabled(true);
 			btnAnalyze.setText("Analyze");
 			btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
-			btnClear.setEnabled(true);
+			btnDelete.setEnabled(true);
+			btnDelete.setText("Delele Rows");
 			btnAdd.setEnabled(true);
 			currTaskLabel.setText("Done");
 		}
@@ -607,6 +640,24 @@ public class FqHashApp extends JFrame {
 	}
 
 
+	/**
+	 * get all selected rows and DELETE one by one.
+	 *
+	 * @param jtable the table to DELETE selected rows
+	 */
+	public static void deleteSelectedRows(JTable jtable) {
+	    int[] selectedrows = jtable.getSelectedRows();  // all selected rows
+	    for (int row : selectedrows) {
+	        row = jtable.getSelectedRow();  // after deleting a row, the index of the next selected row might change
+	        if (jtable.getRowSorter() != null) {
+	            row = jtable.getRowSorter().convertRowIndexToModel(row);
+	        }
+	        ((DefaultTableModel) jtable.getModel()).removeRow(row);
+	    }
+
+	}
+	
+	
 	// use comma (,) to display numbers with thousands separator
 	protected class NumberTableCellRenderer extends DefaultTableCellRenderer {
 
