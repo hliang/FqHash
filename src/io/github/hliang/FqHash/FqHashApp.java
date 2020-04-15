@@ -290,7 +290,7 @@ public class FqHashApp extends JFrame {
 			}
 
 			@Override
-			public Class getColumnClass(int columnIndex) {
+			public Class<?> getColumnClass(int columnIndex) {
 				return columnClass[columnIndex];
 			}
 		};
@@ -422,11 +422,11 @@ public class FqHashApp extends JFrame {
 
 
 	// calculate MD5 hash and count sequences
-	protected void getFileInfo(Vector tableDataVector) {
+	protected void getFileInfo(Vector<?> tableDataVector) {
 		int colMD5Calculated = myTableModel.findColumn("MD5");
 		int colSeqCount = myTableModel.findColumn("Total Seq");
 		for (int row = 0; row < tableDataVector.size(); row++) {
-			File file = (File) ((Vector) tableDataVector.get(row)).get(0);
+			File file = (File) ((Vector<?>) tableDataVector.get(row)).get(0);
 			System.out.println(new Date() + " start processing " + file);
 			
 			// calculate MD5 hash
@@ -566,13 +566,11 @@ public class FqHashApp extends JFrame {
 	// SwingWorker for calculating MD5 hash
 	private class MD5CalWorker extends SwingWorker<Void, Void> {
 		private File file;
-		private DefaultTableModel tableModel;
 		private int row;
 		private int col;
 		
 		public MD5CalWorker(File file, DefaultTableModel tableModel, int row, int col) {
 			this.file = file;
-			this.tableModel = tableModel;
 			this.row = row;
 			this.col = col;
 			
@@ -591,13 +589,11 @@ public class FqHashApp extends JFrame {
 	// SwingWorker for counting sequences
 	private class SeqCountWorker extends SwingWorker<Void, Void> {
 		private File file;
-		private DefaultTableModel tableModel;
 		private int row;
 		private int col;
 		
 		public SeqCountWorker(File file, DefaultTableModel tableModel, int row, int col) {
 			this.file = file;
-			this.tableModel = tableModel;
 			this.row = row;
 			this.col = col;
 			
@@ -624,7 +620,7 @@ public class FqHashApp extends JFrame {
 
 
 	// compare MD5 checksums, and update the column "Match"
-	protected void verifyMD5(Vector tableDataVector) {
+	protected void verifyMD5(Vector<?> tableDataVector) {
 		int colMD5Calculated = myTableModel.findColumn("MD5");
 		int colMD5UserProvided = myTableModel.findColumn("Verify Checksum");
 		int colMD5Matched = myTableModel.findColumn("Match");
