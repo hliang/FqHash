@@ -121,6 +121,7 @@ public class FqHashApp extends JFrame {
 					// cancel background task
 					fqhashWorker.cancel(true);
 //					fqhashWorker = null;
+					currTaskLabel.setText("Stopped");
 				}
 			}
 		});
@@ -188,7 +189,7 @@ public class FqHashApp extends JFrame {
 				btnAnalyze.setIcon(new ImageIcon(this.getClass().getResource("/io/github/hliang/FqHash/Resources/play-32.png")));
 				btnDelete.setEnabled(true);
 				btnAdd.setEnabled(true);
-				currTaskLabel.setText("Stopped");
+				currTaskLabel.setText("Done");
 				btnVerify.setEnabled(true);
             }
         }
@@ -559,7 +560,8 @@ public class FqHashApp extends JFrame {
 			btnDelete.setEnabled(true);
 			btnDelete.setText("Delele Rows");
 			btnAdd.setEnabled(true);
-			currTaskLabel.setText("Done");
+			// don't set currTaskLabel in done(), because done() can be triggered by normal completion or cancellation
+			// currTaskLabel.setText("Done");
 		}
 	}
 
