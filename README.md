@@ -5,10 +5,11 @@ FqHash is a GUI tool to check the integrity of sequence data. It can:
 + Count number of sequences in fastq file
 + Verify the original checksum, and highlight any mismatch
 
-![FqHash Screenshot](https://raw.githubusercontent.com/hliang/hliang.github.io/master/img/FqHash.png)
+![FqHash Screenshot](https://raw.githubusercontent.com/hliang/hliang.github.io/master/img/FqHash-Win.png)
 
 ## Running FqHash
 <em>Requirement: Java Runtime Environment (JRE) 8+</em>
+
 Download the jar file and simply double-click it.
 
 ## Using FqHash
@@ -16,4 +17,3 @@ Download the jar file and simply double-click it.
 2. Select "Count Sequences" if needed.
 3. Click "Analyze" to start processing.
 4. After calculation is done, enter original MD5 checksum values to verify them.
-

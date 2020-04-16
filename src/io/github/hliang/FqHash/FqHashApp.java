@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Vector;
 import java.awt.event.ActionEvent;
 import javax.swing.JCheckBox;
@@ -48,10 +49,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 
 public class FqHashApp extends JFrame {
 
-	public static final String VERSION = "0.1";
+	public static final String VERSION = "0.1.1";
 
 	private JPanel contentPane;
 	private JButton btnAdd;
@@ -72,6 +74,11 @@ public class FqHashApp extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					try {
+						UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+					} catch (Exception e) {
+						System.out.println("Look and Feel not set");;
+					}
 					FqHashApp frame = new FqHashApp();
 					frame.setVisible(true);
 				} catch (Exception e) {
@@ -301,9 +308,17 @@ public class FqHashApp extends JFrame {
 		table.setFillsViewportHeight(true);
 		table.setCellSelectionEnabled(true);
 		table.setOpaque(false);
-		table.setBackground(new Color(255, 255, 230));
+		// table.setBackground(new Color(255, 255, 230));
 		table.setGridColor(Color.lightGray);
-		table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		// set font
+		String OS = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+		if (OS.contains("win")) {
+			table.setFont(new Font("Consolas", Font.PLAIN, 12));
+		} else if (OS.contains("mac")) {
+			table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		} else if (OS.contains("nux")) {
+			table.setFont(new Font("DejaVu Sans Mono", Font.PLAIN, 12));
+		}
 
 		// tool tips when mouse hovers over table header
 		ToolTipHeader tooltipHeader = new ToolTipHeader(table.getColumnModel());
@@ -338,6 +353,7 @@ public class FqHashApp extends JFrame {
 			}
 		}
 
+		table.setIntercellSpacing(new Dimension (10, 1));
 		scrollPane = new JScrollPane(table);
 
 		resultPanel.add(scrollPane);
