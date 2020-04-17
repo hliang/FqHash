@@ -7,10 +7,10 @@ FqHash is a GUI tool to check the integrity of sequence data. It can:
 
 ![FqHash Screenshot](https://raw.githubusercontent.com/hliang/hliang.github.io/master/img/FqHash-Win.png)
 
-## Running FqHash
+## Installation
 <em>Requirement: Java Runtime Environment (JRE) 8+</em>
 
-Download the jar file and simply double-click it.
+Download the latest jar file from the [release page](https://github.com/hliang/FqHash/releases) to your computer, and simply double-click it.
 
 ## Using FqHash
 1. Add files/folder. If a folder is chosen, all sequence files inside will be added to the table.
