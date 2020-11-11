@@ -5,7 +5,7 @@ FqHash is a GUI tool to check the integrity of sequence data. It can:
 + Count number of sequences in fastq file
 + Verify the original checksum, and highlight any mismatch
 
-![FqHash Screenshot](https://raw.githubusercontent.com/hliang/hliang.github.io/master/img/FqHash-Win.png)
+![FqHash Screenshot](/src/io/github/hliang/FqHash/Resources/FqHash.png)
 
 ## Installation
 <em>Requirement: Java Runtime Environment (JRE) 8+</em>
